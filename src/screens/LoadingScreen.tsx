@@ -1,38 +1,58 @@
-const SPIN_KEYFRAMES = `@keyframes rp-spin { to { transform: rotate(360deg); } }`
+import { useEffect, useState } from 'react'
+import { C, FONT } from './shared/theme'
 
-const styles = {
-  root: {
-    height: '100dvh',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    background: '#1a1a2e',
-    gap: 24,
-  },
-  spinner: {
-    width: 48,
-    height: 48,
-    border: '4px solid rgba(255,255,255,0.15)',
-    borderTop: '4px solid #f4c542',
-    borderRadius: '50%',
-    animation: 'rp-spin 0.8s linear infinite',
-  },
-  label: {
-    color: 'rgba(255,255,255,0.55)',
-    fontSize: 16,
-    fontFamily: 'system-ui, sans-serif',
-    letterSpacing: '0.04em',
-  },
-} satisfies Record<string, React.CSSProperties>
+const SPIN = `@keyframes rp-spin { to { transform: rotate(360deg); } }`
+
+const MESSAGES = [
+  'Cargando monedas…',
+  'Preparando el escenario…',
+  'Cargando el ranking…',
+  'Buscando políticos…',
+  'Afinando la piñata…',
+  'Verificando inventario…',
+]
 
 export function LoadingScreen() {
+  const [idx, setIdx] = useState(0)
+
+  useEffect(() => {
+    const id = setInterval(() => setIdx((i) => (i + 1) % MESSAGES.length), 1800)
+    return () => clearInterval(id)
+  }, [])
+
   return (
     <>
-      <style>{SPIN_KEYFRAMES}</style>
-      <div style={styles.root}>
-        <div style={styles.spinner} />
-        <span style={styles.label}>Cargando…</span>
+      <style>{SPIN}</style>
+      <div
+        style={{
+          height: '100dvh',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: C.bg,
+          gap: 28,
+          fontFamily: FONT,
+        }}
+      >
+        <h1 style={{ margin: 0, fontSize: 28, fontWeight: 800, color: C.gold, letterSpacing: '0.03em' }}>
+          💰 Roba Políticos
+        </h1>
+        <div
+          style={{
+            width: 44,
+            height: 44,
+            border: '4px solid rgba(255,255,255,0.12)',
+            borderTop: `4px solid ${C.gold}`,
+            borderRadius: '50%',
+            animation: 'rp-spin 0.8s linear infinite',
+          }}
+        />
+        <span
+          style={{ color: C.dim, fontSize: 14, letterSpacing: '0.03em', minHeight: 20, transition: 'opacity 0.3s' }}
+        >
+          {MESSAGES[idx]}
+        </span>
       </div>
     </>
   )
