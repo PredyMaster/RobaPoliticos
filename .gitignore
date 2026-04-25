@@ -31,3 +31,6 @@ ios/
 *.njsproj
 *.sln
 *.sw?
+
+# Personal
+/info

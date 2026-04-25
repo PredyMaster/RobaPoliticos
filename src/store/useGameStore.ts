@@ -1,40 +1,37 @@
 import { create } from 'zustand'
-import type { GraphicsQuality, RunResult } from '../game/types/game'
+import type { GraphicsQuality, RunResult, ComboState } from '../game/types/game'
 import type { SubmitRunResult } from '../game/types/player'
 import { submitRun } from '../services/supabase/runs'
 import { usePlayerStore } from './usePlayerStore'
+import { EventBus } from '../game/EventBus'
 
 type GameState = {
-  // Estado de la partida en curso
   isPaused: boolean
   isRunActive: boolean
-
-  // Puntuación acumulada durante la partida (local, no va a BD por cada moneda)
   runScore: number
   runCoins: number
-
-  // Resultado de la última partida (para pantalla End Run)
+  runCombo: ComboState | null
   lastRunResult: RunResult | null
   lastSubmitResult: SubmitRunResult | null
   isSubmitting: boolean
-
-  // Audio y efectos (sincronizados con PlayerPreferences pero accesibles rápido desde Phaser)
   musicEnabled: boolean
   sfxEnabled: boolean
   vibrationEnabled: boolean
-
-  // Calidad gráfica
   quality: GraphicsQuality
 }
 
 type GameActions = {
-  // Control de partida
+  // Llamado desde React UI → notifica a Phaser vía EventBus
   startRun: () => void
   pauseRun: () => void
   resumeRun: () => void
 
-  // Actualización de score durante gameplay (llamado desde Phaser vía EventBus)
+  // Llamado cuando Phaser inicia la pausa (evita reemisión circular)
+  showPauseMenu: () => void
+
+  // Actualizaciones desde Phaser → React (vía EventBus handlers en GameScreen)
   updateRunScore: (score: number, coins: number) => void
+  updateCombo: (combo: ComboState) => void
 
   // Finalizar partida: guarda localmente y envía a Supabase
   endRun: (result: RunResult) => Promise<void>
@@ -49,11 +46,12 @@ type GameActions = {
   syncPreferences: () => void
 }
 
-export const useGameStore = create<GameState & GameActions>((set, get) => ({
+export const useGameStore = create<GameState & GameActions>((set) => ({
   isPaused: false,
   isRunActive: false,
   runScore: 0,
   runCoins: 0,
+  runCombo: null,
   lastRunResult: null,
   lastSubmitResult: null,
   isSubmitting: false,
@@ -62,14 +60,29 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
   vibrationEnabled: true,
   quality: 'high',
 
-  startRun: () =>
-    set({ isRunActive: true, isPaused: false, runScore: 0, runCoins: 0, lastRunResult: null, lastSubmitResult: null }),
+  startRun: () => {
+    set({ isRunActive: true, isPaused: false, runScore: 0, runCoins: 0, runCombo: null, lastRunResult: null, lastSubmitResult: null })
+    EventBus.emit('RUN_STARTED')
+  },
 
-  pauseRun: () => set({ isPaused: true }),
+  // Pausa iniciada por React (botón HUD) → Phaser debe pausar
+  pauseRun: () => {
+    set({ isPaused: true })
+    EventBus.emit('RUN_PAUSED')
+  },
 
-  resumeRun: () => set({ isPaused: false }),
+  // Pausa iniciada por Phaser (OPEN_PAUSE_MENU) → solo actualiza UI sin reemitir
+  showPauseMenu: () => set({ isPaused: true }),
+
+  // Reanudar desde React → Phaser debe reanudar
+  resumeRun: () => {
+    set({ isPaused: false })
+    EventBus.emit('RUN_RESUMED')
+  },
 
   updateRunScore: (score, coins) => set({ runScore: score, runCoins: coins }),
+
+  updateCombo: (combo) => set({ runCombo: combo }),
 
   endRun: async (result) => {
     set({ isRunActive: false, isPaused: false, lastRunResult: result, isSubmitting: true })
@@ -77,7 +90,6 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
     const submitResult = await submitRun(result)
     set({ lastSubmitResult: submitResult, isSubmitting: false })
 
-    // Refrescar wallet y nivel del jugador en el store global
     if (submitResult.ok) {
       await usePlayerStore.getState().refreshWallet()
     }

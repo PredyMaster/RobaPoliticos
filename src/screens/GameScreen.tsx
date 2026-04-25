@@ -1,14 +1,18 @@
-import { useRef } from 'react'
+import { useRef, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useGameStore } from '../store/useGameStore'
+import { EventBus } from '../game/EventBus'
+import type { ComboState, RunResult } from '../game/types/game'
 import { C, FONT } from './shared/theme'
 
 // ── HUD ──────────────────────────────────────────────────────
 
-function GameHUD() {
+function GameHUD({ onPause }: { onPause: () => void }) {
   const runScore = useGameStore((s) => s.runScore)
   const runCoins = useGameStore((s) => s.runCoins)
-  const pauseRun = useGameStore((s) => s.pauseRun)
+  const runCombo = useGameStore((s) => s.runCombo)
+
+  const showCombo = runCombo !== null && runCombo.active && runCombo.count >= 2
 
   return (
     <div
@@ -27,9 +31,28 @@ function GameHUD() {
       }}
     >
       <span style={{ color: '#fff', fontSize: 20, fontWeight: 700 }}>🪙 {runCoins}</span>
-      <span style={{ color: C.gold, fontSize: 28, fontWeight: 800 }}>{runScore.toLocaleString()}</span>
+
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+        <span style={{ color: C.gold, fontSize: 28, fontWeight: 800 }}>{runScore.toLocaleString()}</span>
+        {showCombo && (
+          <span
+            style={{
+              color: '#fff',
+              fontSize: 13,
+              fontWeight: 700,
+              background: `linear-gradient(90deg, ${C.goldDk}, ${C.gold})`,
+              borderRadius: 6,
+              padding: '2px 8px',
+              letterSpacing: '0.04em',
+            }}
+          >
+            ×{runCombo!.multiplier.toFixed(1)} · {runCombo!.count} combo
+          </span>
+        )}
+      </div>
+
       <button
-        onClick={pauseRun}
+        onClick={onPause}
         style={{
           background: 'rgba(0,0,0,0.45)',
           border: '1px solid rgba(255,255,255,0.25)',
@@ -124,7 +147,6 @@ function PauseOverlay({ onResume, onExit }: { onResume: () => void; onExit: () =
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 0,
         zIndex: 100,
         fontFamily: FONT,
       }}
@@ -132,25 +154,18 @@ function PauseOverlay({ onResume, onExit }: { onResume: () => void; onExit: () =
       <h2 style={{ color: C.gold, fontSize: 28, margin: '0 0 24px', fontWeight: 800 }}>Pausa</h2>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 28, width: 260 }}>
-        <ToggleRow label="🎵 Música"     value={musicEnabled}     onChange={setMusic} />
-        <ToggleRow label="🔊 Efectos"    value={sfxEnabled}       onChange={setSfx} />
-        <ToggleRow label="📳 Vibración"  value={vibrationEnabled} onChange={setVibration} />
+        <ToggleRow label="🎵 Música"    value={musicEnabled}     onChange={setMusic} />
+        <ToggleRow label="🔊 Efectos"   value={sfxEnabled}       onChange={setSfx} />
+        <ToggleRow label="📳 Vibración" value={vibrationEnabled} onChange={setVibration} />
       </div>
 
       <button
         onClick={onResume}
         style={{
-          width: 260,
-          padding: '14px',
-          background: C.gold,
-          border: 'none',
-          borderRadius: 10,
-          color: '#1a1a2e',
-          fontSize: 16,
-          fontWeight: 700,
-          cursor: 'pointer',
-          fontFamily: FONT,
-          marginBottom: 10,
+          width: 260, padding: '14px',
+          background: C.gold, border: 'none', borderRadius: 10,
+          color: '#1a1a2e', fontSize: 16, fontWeight: 700,
+          cursor: 'pointer', fontFamily: FONT, marginBottom: 10,
         }}
       >
         ▶ Continuar
@@ -159,15 +174,11 @@ function PauseOverlay({ onResume, onExit }: { onResume: () => void; onExit: () =
       <button
         onClick={onExit}
         style={{
-          width: 260,
-          padding: '12px',
+          width: 260, padding: '12px',
           background: 'rgba(255,255,255,0.07)',
-          border: `1px solid ${C.border}`,
-          borderRadius: 10,
-          color: '#fff',
-          fontSize: 15,
-          cursor: 'pointer',
-          fontFamily: FONT,
+          border: `1px solid ${C.border}`, borderRadius: 10,
+          color: '#fff', fontSize: 15,
+          cursor: 'pointer', fontFamily: FONT,
         }}
       >
         ✕ Salir al menú
@@ -179,13 +190,65 @@ function PauseOverlay({ onResume, onExit }: { onResume: () => void; onExit: () =
 // ── GameScreen ────────────────────────────────────────────────
 
 export function GameScreen() {
-  const navigate    = useNavigate()
-  const containerRef = useRef<HTMLDivElement>(null)
+  const navigate       = useNavigate()
+  const containerRef   = useRef<HTMLDivElement>(null)
 
-  const isRunActive = useGameStore((s) => s.isRunActive)
-  const isPaused    = useGameStore((s) => s.isPaused)
-  const startRun    = useGameStore((s) => s.startRun)
-  const resumeRun   = useGameStore((s) => s.resumeRun)
+  const isRunActive    = useGameStore((s) => s.isRunActive)
+  const isPaused       = useGameStore((s) => s.isPaused)
+  const startRun       = useGameStore((s) => s.startRun)
+  const pauseRun       = useGameStore((s) => s.pauseRun)
+  const resumeRun      = useGameStore((s) => s.resumeRun)
+  const showPauseMenu  = useGameStore((s) => s.showPauseMenu)
+  const updateRunScore = useGameStore((s) => s.updateRunScore)
+  const updateCombo    = useGameStore((s) => s.updateCombo)
+  const endRun         = useGameStore((s) => s.endRun)
+
+  // Salir: notifica a Phaser (si está activo) y navega
+  const handleExit = useCallback(() => {
+    EventBus.emit('EXIT_TO_HOME')
+    navigate('/home')
+  }, [navigate])
+
+  // ── Bridge Phaser → React ─────────────────────────────────
+  useEffect(() => {
+    const onScoreUpdated = (data: { runScore: number; totalCoins: number }) => {
+      updateRunScore(data.runScore, data.totalCoins)
+    }
+
+    const onComboUpdated = (combo: ComboState) => {
+      updateCombo(combo)
+    }
+
+    // Phaser señala fin de partida → guardamos y navegamos
+    const onRunEnded = (result: RunResult) => {
+      endRun(result) // fire-and-forget; EndRunScreen muestra "Guardando…" mientras isSubmitting=true
+      navigate('/end-run', { replace: true })
+    }
+
+    // Phaser quiere mostrar el menú de pausa (p.ej. botón físico Android)
+    const onOpenPauseMenu = () => {
+      showPauseMenu()
+    }
+
+    // Phaser pide salir al home (p.ej. tiempo agotado + timeout de gracia)
+    const onPhaserExitToHome = () => {
+      navigate('/home', { replace: true })
+    }
+
+    EventBus.on('RUN_SCORE_UPDATED', onScoreUpdated)
+    EventBus.on('COMBO_UPDATED',     onComboUpdated)
+    EventBus.on('RUN_ENDED',         onRunEnded)
+    EventBus.on('OPEN_PAUSE_MENU',   onOpenPauseMenu)
+    EventBus.on('EXIT_TO_HOME',      onPhaserExitToHome)
+
+    return () => {
+      EventBus.off('RUN_SCORE_UPDATED', onScoreUpdated)
+      EventBus.off('COMBO_UPDATED',     onComboUpdated)
+      EventBus.off('RUN_ENDED',         onRunEnded)
+      EventBus.off('OPEN_PAUSE_MENU',   onOpenPauseMenu)
+      EventBus.off('EXIT_TO_HOME',      onPhaserExitToHome)
+    }
+  }, [updateRunScore, updateCombo, endRun, showPauseMenu, navigate])
 
   return (
     <div
@@ -211,14 +274,9 @@ export function GameScreen() {
               onClick={startRun}
               style={{
                 padding: '16px 48px',
-                background: C.gold,
-                border: 'none',
-                borderRadius: 12,
-                color: '#1a1a2e',
-                fontSize: 18,
-                fontWeight: 700,
-                cursor: 'pointer',
-                fontFamily: FONT,
+                background: C.gold, border: 'none', borderRadius: 12,
+                color: '#1a1a2e', fontSize: 18, fontWeight: 700,
+                cursor: 'pointer', fontFamily: FONT,
               }}
             >
               ▶ Iniciar Partida
@@ -233,9 +291,9 @@ export function GameScreen() {
         )}
       </div>
 
-      {isRunActive && <GameHUD />}
+      {isRunActive && <GameHUD onPause={pauseRun} />}
 
-      {isPaused && <PauseOverlay onResume={resumeRun} onExit={() => navigate('/home')} />}
+      {isPaused && <PauseOverlay onResume={resumeRun} onExit={handleExit} />}
     </div>
   )
 }
