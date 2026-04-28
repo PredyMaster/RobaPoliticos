@@ -1,7 +1,11 @@
 import { useRef, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useGameStore } from '../store/useGameStore'
+import { useInventoryStore } from '../store/useInventoryStore'
+import { usePlayerStore } from '../store/usePlayerStore'
 import { EventBus } from '../game/EventBus'
+import Phaser from 'phaser'
+import { createGame } from '../game/PhaserGame'
 import type { ComboState, RunResult } from '../game/types/game'
 import { C, FONT } from './shared/theme'
 
@@ -192,7 +196,9 @@ function PauseOverlay({ onResume, onExit }: { onResume: () => void; onExit: () =
 export function GameScreen() {
   const navigate       = useNavigate()
   const containerRef   = useRef<HTMLDivElement>(null)
+  const gameRef        = useRef<Phaser.Game | null>(null)
 
+  // ── Stores ────────────────────────────────────────────────
   const isRunActive    = useGameStore((s) => s.isRunActive)
   const isPaused       = useGameStore((s) => s.isPaused)
   const startRun       = useGameStore((s) => s.startRun)
@@ -202,6 +208,35 @@ export function GameScreen() {
   const updateRunScore = useGameStore((s) => s.updateRunScore)
   const updateCombo    = useGameStore((s) => s.updateCombo)
   const endRun         = useGameStore((s) => s.endRun)
+  const musicEnabled     = useGameStore((s) => s.musicEnabled)
+  const sfxEnabled       = useGameStore((s) => s.sfxEnabled)
+  const vibrationEnabled = useGameStore((s) => s.vibrationEnabled)
+  const quality          = useGameStore((s) => s.quality)
+
+  const equipment  = useInventoryStore((s) => s.equipment)
+  const profile    = usePlayerStore((s) => s.profile)
+
+  // ── Phaser bootstrap ──────────────────────────────────────
+  useEffect(() => {
+    if (!containerRef.current) return
+
+    gameRef.current = createGame(containerRef.current, {
+      equippedWeaponId: equipment?.equippedWeaponId ?? 'hand_basic',
+      equippedBoxId:    equipment?.equippedBoxId    ?? 'small_box',
+      musicEnabled,
+      sfxEnabled,
+      vibrationEnabled,
+      quality,
+      username: profile?.username ?? 'Player',
+    })
+
+    return () => {
+      gameRef.current?.destroy(true)
+      gameRef.current = null
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  // ↑ Intencional: creamos el juego una vez; los cambios de preferencia
+  //   se comunican a Phaser vía EventBus desde los stores.
 
   // Salir: notifica a Phaser (si está activo) y navega
   const handleExit = useCallback(() => {
@@ -261,35 +296,52 @@ export function GameScreen() {
         fontFamily: FONT,
       }}
     >
-      {/* Phaser se montará aquí en la Fase 11 */}
+      {/* Phaser canvas container — ocupa todo el espacio; Phaser gestiona su tamaño */}
       <div
         ref={containerRef}
         id="phaser-container"
-        style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-      >
-        {!isRunActive && (
-          <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 14, alignItems: 'center' }}>
-            <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: 12, margin: 0 }}>Canvas Phaser — Fase 11</p>
-            <button
-              onClick={startRun}
-              style={{
-                padding: '16px 48px',
-                background: C.gold, border: 'none', borderRadius: 12,
-                color: '#1a1a2e', fontSize: 18, fontWeight: 700,
-                cursor: 'pointer', fontFamily: FONT,
-              }}
-            >
-              ▶ Iniciar Partida
-            </button>
-            <button
-              onClick={() => navigate('/home')}
-              style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.35)', fontSize: 13, cursor: 'pointer', fontFamily: FONT }}
-            >
-              ← Volver al menú
-            </button>
-          </div>
-        )}
-      </div>
+        style={{ width: '100%', height: '100%' }}
+      />
+
+      {/* Overlay de inicio (sobre el canvas de Phaser mientras no hay partida activa) */}
+      {!isRunActive && (
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 14,
+            pointerEvents: 'none', // pasa eventos al canvas salvo los botones
+          }}
+        >
+          <button
+            onClick={startRun}
+            style={{
+              padding: '16px 48px',
+              background: C.gold, border: 'none', borderRadius: 12,
+              color: '#1a1a2e', fontSize: 18, fontWeight: 700,
+              cursor: 'pointer', fontFamily: FONT,
+              pointerEvents: 'auto',
+            }}
+          >
+            ▶ Iniciar Partida
+          </button>
+          <button
+            onClick={() => navigate('/home')}
+            style={{
+              background: 'none', border: 'none',
+              color: 'rgba(255,255,255,0.45)', fontSize: 13,
+              cursor: 'pointer', fontFamily: FONT,
+              pointerEvents: 'auto',
+            }}
+          >
+            ← Volver al menú
+          </button>
+        </div>
+      )}
 
       {isRunActive && <GameHUD onPause={pauseRun} />}
 
