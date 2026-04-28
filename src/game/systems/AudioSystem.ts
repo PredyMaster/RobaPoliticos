@@ -1,50 +1,74 @@
 import Phaser from 'phaser'
-import type { CoinTypeId } from '../types/game'
+import type { CoinTypeId, ComboState } from '../types/game'
+import type { SwipeHitEvent } from './SwipeSystem'
 
-// Stub — real sound loading and playback wired in Phase 16.
+const RARE_COIN  = new Set<CoinTypeId>(['gold_coin', 'gem', 'money_bill'])
+const COMBO_BEATS = new Set([5, 10, 20, 50])
+
+type CoinCaughtEvent = { coinType: CoinTypeId }
+
 export class AudioSystem {
   private readonly scene: Phaser.Scene
   private musicEnabled: boolean
-  private sfxEnabled: boolean
-  private unlocked = false
+  private sfxEnabled:   boolean
+  private unlocked    = false
+
+  private sfxHit!:      Phaser.Sound.BaseSound | null
+  private sfxCrit!:     Phaser.Sound.BaseSound | null
+  private sfxCoin!:     Phaser.Sound.BaseSound | null
+  private sfxCoinRare!: Phaser.Sound.BaseSound | null
+  private sfxCombo!:    Phaser.Sound.BaseSound | null
+  private sfxPurchase!: Phaser.Sound.BaseSound | null
 
   constructor(scene: Phaser.Scene, musicEnabled: boolean, sfxEnabled: boolean) {
     this.scene        = scene
     this.musicEnabled = musicEnabled
     this.sfxEnabled   = sfxEnabled
-    scene.input.once('pointerdown', this.unlock, this)
+
+    this.sfxHit      = this.tryAdd('sfx_hit',       { volume: 0.55 })
+    this.sfxCrit     = this.tryAdd('sfx_crit',      { volume: 0.70 })
+    this.sfxCoin     = this.tryAdd('sfx_coin',      { volume: 0.45 })
+    this.sfxCoinRare = this.tryAdd('sfx_coin_rare', { volume: 0.55 })
+    this.sfxCombo    = this.tryAdd('sfx_combo',     { volume: 0.60 })
+    this.sfxPurchase = this.tryAdd('sfx_purchase',  { volume: 0.65 })
+
+    scene.input.once('pointerdown',   this.unlock,         this)
+    scene.events.on('swipe:hit',      this.onSwipeHit,     this)
+    scene.events.on('coin:caught',    this.onCoinCaught,   this)
+    scene.events.on('combo:changed',  this.onComboChanged, this)
   }
 
   setMusicEnabled(value: boolean): void { this.musicEnabled = value }
   setSfxEnabled(value: boolean): void   { this.sfxEnabled   = value }
 
-  playHit(isCritical: boolean): void {
-    if (!this.sfxEnabled || !this.unlocked) return
-    void isCritical  // Phase 16: play sfx_hit_* per equipped weapon
-  }
-
-  playCoinCollect(type: CoinTypeId): void {
-    if (!this.sfxEnabled || !this.unlocked) return
-    void type  // Phase 16: play coin collect sound
-  }
-
-  playCombo(level: number): void {
-    if (!this.sfxEnabled || !this.unlocked) return
-    void level  // Phase 16: play combo stinger
-  }
-
   playPurchase(): void {
     if (!this.sfxEnabled || !this.unlocked) return
-    // Phase 16: play purchase sound
+    this.sfxPurchase?.play()
   }
 
   playMusic(): void {
-    if (!this.musicEnabled) return
-    // Phase 16: start background music loop
+    // Needs a real looping music file — wired in a future phase
   }
 
   stopMusic(): void {
-    // Phase 16: fade out and stop music
+    // Fade out — wired in a future phase
+  }
+
+  private onSwipeHit(e: SwipeHitEvent): void {
+    if (!this.sfxEnabled || !this.unlocked) return
+    if (e.isCritical) this.sfxCrit?.play()
+    else              this.sfxHit?.play()
+  }
+
+  private onCoinCaught(e: CoinCaughtEvent): void {
+    if (!this.sfxEnabled || !this.unlocked) return
+    if (RARE_COIN.has(e.coinType)) this.sfxCoinRare?.play()
+    else                           this.sfxCoin?.play()
+  }
+
+  private onComboChanged(combo: ComboState): void {
+    if (!this.sfxEnabled || !this.unlocked || !COMBO_BEATS.has(combo.count)) return
+    this.sfxCombo?.play()
   }
 
   private unlock(): void {
@@ -52,8 +76,21 @@ export class AudioSystem {
     this.playMusic()
   }
 
+  private tryAdd(key: string, cfg: Phaser.Types.Sound.SoundConfig): Phaser.Sound.BaseSound | null {
+    if (!this.scene.cache.audio.exists(key)) return null
+    return this.scene.sound.add(key, cfg)
+  }
+
   destroy(): void {
-    this.stopMusic()
-    this.scene.input.off('pointerdown', this.unlock, this)
+    this.scene.input.off('pointerdown',   this.unlock,        this)
+    this.scene.events.off('swipe:hit',    this.onSwipeHit,    this)
+    this.scene.events.off('coin:caught',  this.onCoinCaught,  this)
+    this.scene.events.off('combo:changed', this.onComboChanged, this)
+    this.sfxHit?.destroy()
+    this.sfxCrit?.destroy()
+    this.sfxCoin?.destroy()
+    this.sfxCoinRare?.destroy()
+    this.sfxCombo?.destroy()
+    this.sfxPurchase?.destroy()
   }
 }

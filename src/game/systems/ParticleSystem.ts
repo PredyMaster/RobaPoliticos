@@ -1,5 +1,6 @@
 import Phaser from 'phaser'
 import type { CoinTypeId, GraphicsQuality } from '../types/game'
+import { SCENE_W, SCENE_H } from '../scenes/GameScene'
 
 const QUALITY_COUNT: Record<GraphicsQuality, number> = { low: 4, medium: 8, high: 16 }
 
@@ -19,11 +20,13 @@ export class ParticleSystem {
   private readonly maxCount: number
   private hitEmitter!:     Phaser.GameObjects.Particles.ParticleEmitter
   private collectEmitter!: Phaser.GameObjects.Particles.ParticleEmitter
+  private feverOverlay!:   Phaser.GameObjects.Rectangle
 
   constructor(scene: Phaser.Scene, quality: GraphicsQuality) {
     this.scene    = scene
     this.maxCount = QUALITY_COUNT[quality]
     this.createEmitters()
+    this.createFeverOverlay()
 
     scene.events.on('player:hit',  this.onPlayerHit,  this)
     scene.events.on('coin:caught', this.onCoinCaught, this)
@@ -51,6 +54,13 @@ export class ParticleSystem {
     })
   }
 
+  private createFeverOverlay(): void {
+    this.feverOverlay = this.scene.add
+      .rectangle(SCENE_W / 2, SCENE_H / 2, SCENE_W, SCENE_H, 0xffcc44)
+      .setAlpha(0)
+      .setDepth(50)
+  }
+
   private onPlayerHit(e: PlayerHitEvent): void {
     const count = e.isCritical ? this.maxCount * 2 : this.maxCount
     const { x, y } = this.hitEmitter
@@ -69,11 +79,22 @@ export class ParticleSystem {
   }
 
   private onFeverStart(): void {
-    // Phase 16: golden screen tint
+    this.scene.cameras.main.flash(300, 255, 200, 50, true)
+    this.scene.tweens.add({
+      targets:  this.feverOverlay,
+      alpha:    0.10,
+      duration: 400,
+      ease:     'Power1',
+    })
   }
 
   private onFeverEnd(): void {
-    // Phase 16: remove tint
+    this.scene.tweens.add({
+      targets:  this.feverOverlay,
+      alpha:    0,
+      duration: 700,
+      ease:     'Power2',
+    })
   }
 
   destroy(): void {
@@ -83,5 +104,6 @@ export class ParticleSystem {
     this.scene.events.off('fever:end',   this.onFeverEnd,   this)
     this.hitEmitter.destroy()
     this.collectEmitter.destroy()
+    this.feverOverlay.destroy()
   }
 }

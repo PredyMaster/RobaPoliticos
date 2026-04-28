@@ -13,6 +13,7 @@ import { CollisionSystem } from '../systems/CollisionSystem'
 import { AudioSystem } from '../systems/AudioSystem'
 import { ParticleSystem } from '../systems/ParticleSystem'
 import { EconomySystem } from '../systems/EconomySystem'
+import { HapticsSystem } from '../systems/HapticsSystem'
 import { getWeapon } from '../data/weapons'
 import { getBox } from '../data/boxes'
 import type { GraphicsQuality } from '../types/game'
@@ -46,6 +47,7 @@ export class GameScene extends Phaser.Scene {
   private audio!:     AudioSystem
   private particles!: ParticleSystem
   private economy!:   EconomySystem
+  private haptics!:   HapticsSystem
 
   constructor() {
     super({ key: 'GameScene' })
@@ -56,12 +58,13 @@ export class GameScene extends Phaser.Scene {
 
     const weaponId = (this.registry.get('equippedWeaponId') as string)  || 'hand_basic'
     const boxId    = (this.registry.get('equippedBoxId')    as string)  || 'small_box'
-    const music    = (this.registry.get('musicEnabled')     as boolean) ?? true
-    const sfx      = (this.registry.get('sfxEnabled')       as boolean) ?? true
-    const quality  = (this.registry.get('quality')          as GraphicsQuality) || 'medium'
+    const music      = (this.registry.get('musicEnabled')     as boolean) ?? true
+    const sfx        = (this.registry.get('sfxEnabled')       as boolean) ?? true
+    const vibration  = (this.registry.get('vibrationEnabled') as boolean) ?? true
+    const quality    = (this.registry.get('quality')          as GraphicsQuality) || 'medium'
 
     this.buildEntities(weaponId, boxId)
-    this.buildSystems(weaponId, boxId, music, sfx, quality)
+    this.buildSystems(weaponId, boxId, music, sfx, vibration, quality)
     this.registerEventBusListeners()
     EventBus.emit('GAME_READY')
   }
@@ -94,11 +97,12 @@ export class GameScene extends Phaser.Scene {
   // ── Systems ───────────────────────────────────────────────
 
   private buildSystems(
-    weaponId: string,
-    boxId: string,
-    music: boolean,
-    sfx: boolean,
-    quality: GraphicsQuality,
+    weaponId:  string,
+    boxId:     string,
+    music:     boolean,
+    sfx:       boolean,
+    vibration: boolean,
+    quality:   GraphicsQuality,
   ): void {
     const weapon = getWeapon(weaponId)
 
@@ -110,6 +114,7 @@ export class GameScene extends Phaser.Scene {
     this.audio     = new AudioSystem(this, music, sfx)
     this.particles = new ParticleSystem(this, quality)
     this.economy   = new EconomySystem(this, this.score, this.collision, weaponId, boxId)
+    this.haptics   = new HapticsSystem(this, vibration)
 
     this.particles.setPlayerPosition(this.player.x, this.player.y)
   }
@@ -170,5 +175,6 @@ export class GameScene extends Phaser.Scene {
     this.audio?.destroy()
     this.particles?.destroy()
     this.economy?.destroy()
+    this.haptics?.destroy()
   }
 }

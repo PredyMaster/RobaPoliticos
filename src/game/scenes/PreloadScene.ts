@@ -1,5 +1,6 @@
 import Phaser from 'phaser'
 import { EventBus } from '../EventBus'
+import { toneDataUrl } from '../utils/audio'
 
 // Dimensiones de la pantalla base
 const W = 1920
@@ -17,6 +18,7 @@ export class PreloadScene extends Phaser.Scene {
     this.createLoadingUI()
     this.registerLoadEvents()
     this.generatePlaceholderTextures()
+    this.loadPlaceholderAudio()
   }
 
   private createLoadingUI(): void {
@@ -128,10 +130,18 @@ export class PreloadScene extends Phaser.Scene {
     gfx.destroy()
   }
 
-  create(): void {
-    EventBus.emit('GAME_READY')
+  private loadPlaceholderAudio(): void {
+    this.load.audio('sfx_hit',       toneDataUrl(160,  130, 0.40, 'sine'))
+    this.load.audio('sfx_crit',      toneDataUrl(520,  110, 0.45, 'square'))
+    this.load.audio('sfx_coin',      toneDataUrl(880,   80, 0.35, 'sine'))
+    this.load.audio('sfx_coin_rare', toneDataUrl(1320, 100, 0.40, 'sine'))
+    this.load.audio('sfx_combo',     toneDataUrl(660,  120, 0.50, 'sine'))
+    this.load.audio('sfx_purchase',  toneDataUrl(659,  200, 0.45, 'sine'))
+  }
 
+  create(): void {
     // Lanzar GameScene y UIScene en paralelo; detener PreloadScene
+    // GAME_READY lo emite GameScene cuando todos sus sistemas están listos
     this.scene.launch('GameScene')
     this.scene.launch('UIScene')
     this.scene.stop()
