@@ -12,6 +12,7 @@ export class AudioSystem {
   private musicEnabled: boolean
   private sfxEnabled:   boolean
 
+  private bgMusic!:     Phaser.Sound.BaseSound | null
   private sfxSlaps!:    (Phaser.Sound.BaseSound | null)[]
   private sfxCoins!:    (Phaser.Sound.BaseSound | null)[]
   private sfxCoinRare!: Phaser.Sound.BaseSound | null
@@ -23,6 +24,7 @@ export class AudioSystem {
     this.musicEnabled = musicEnabled
     this.sfxEnabled   = sfxEnabled
 
+    this.bgMusic     = this.tryAdd('bgm',          { loop: true, volume: 0.4 })
     this.sfxSlaps    = [1, 2, 3, 4].map(i => this.tryAdd(`sfx_slap_${i}`, { volume: 0.70 }))
     this.sfxCoins    = [1, 2, 3, 4, 5].map(i => this.tryAdd(`sfx_coin_${i}`, { volume: 0.55 }))
     this.sfxCoinRare = this.tryAdd('sfx_coin_rare', { volume: 0.55 })
@@ -32,22 +34,51 @@ export class AudioSystem {
     scene.events.on('swipe:hit',      this.onSwipeHit,     this)
     scene.events.on('coin:caught',    this.onCoinCaught,   this)
     scene.events.on('combo:changed',  this.onComboChanged, this)
+
+    // El AudioContext del navegador arranca suspendido hasta el primer gesto.
+    // Si ya está desbloqueado (ej: el usuario llegó aquí desde la home screen
+    // haciendo click), playMusic() arrancará directamente. Si no, esperamos al
+    // evento 'unlocked' que Phaser emite tras la primera interacción.
+    if (scene.sound.locked) {
+      scene.sound.once('unlocked', this.onSoundUnlocked, this)
+    }
   }
 
-  setMusicEnabled(value: boolean): void { this.musicEnabled = value }
-  setSfxEnabled(value: boolean): void   { this.sfxEnabled   = value }
+  // Llamar desde GameScene.create() tras construir este sistema.
+  playMusic(): void {
+    if (!this.bgMusic || !this.musicEnabled) return
+    if (!this.bgMusic.isPlaying) {
+      this.bgMusic.play()
+    }
+  }
+
+  stopMusic(): void {
+    if (this.bgMusic?.isPlaying) {
+      this.bgMusic.stop()
+    }
+  }
+
+  setMusicEnabled(value: boolean): void {
+    this.musicEnabled = value
+    if (value) {
+      this.playMusic()
+    } else {
+      this.stopMusic()
+    }
+  }
+
+  setSfxEnabled(value: boolean): void { this.sfxEnabled = value }
 
   playPurchase(): void {
     if (!this.sfxEnabled) return
     this.sfxPurchase?.play()
   }
 
-  playMusic(): void {
-    // Needs a real looping music file — wired in a future phase
-  }
-
-  stopMusic(): void {
-    // Fade out — wired in a future phase
+  private onSoundUnlocked(): void {
+    // El AudioContext acaba de desbloquearse: arrancamos la música ahora.
+    if (this.musicEnabled && this.bgMusic && !this.bgMusic.isPlaying) {
+      this.bgMusic.play()
+    }
   }
 
   private onSwipeHit(_e: SwipeHitEvent): void {
@@ -80,9 +111,12 @@ export class AudioSystem {
   }
 
   destroy(): void {
-    this.scene.events.off('swipe:hit',    this.onSwipeHit,    this)
-    this.scene.events.off('coin:caught',  this.onCoinCaught,  this)
+    this.scene.sound.off('unlocked', this.onSoundUnlocked, this)
+    this.scene.events.off('swipe:hit',     this.onSwipeHit,    this)
+    this.scene.events.off('coin:caught',   this.onCoinCaught,  this)
     this.scene.events.off('combo:changed', this.onComboChanged, this)
+    this.bgMusic?.stop()
+    this.bgMusic?.destroy()
     this.sfxSlaps.forEach(s => s?.destroy())
     this.sfxCoins.forEach(s => s?.destroy())
     this.sfxCoinRare?.destroy()

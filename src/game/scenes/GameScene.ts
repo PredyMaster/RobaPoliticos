@@ -75,6 +75,7 @@ export class GameScene extends Phaser.Scene {
     this.buildEntities(weaponId, boxId)
     this.buildSystems(weaponId, boxId, music, sfx, vibration, quality)
     this.registerEventBusListeners()
+    this.audio.playMusic()
     EventBus.emit("GAME_READY")
   }
 
@@ -132,10 +133,20 @@ export class GameScene extends Phaser.Scene {
   // ── EventBus bridge ───────────────────────────────────────
 
   private registerEventBusListeners(): void {
-    EventBus.on("RUN_STARTED", this.onRunStarted, this)
-    EventBus.on("RUN_PAUSED", this.onRunPaused, this)
-    EventBus.on("RUN_RESUMED", this.onRunResumed, this)
-    EventBus.on("EXIT_TO_HOME", this.onExitToHome, this)
+    EventBus.on("RUN_STARTED",   this.onRunStarted,   this)
+    EventBus.on("RUN_PAUSED",    this.onRunPaused,    this)
+    EventBus.on("RUN_RESUMED",   this.onRunResumed,   this)
+    EventBus.on("EXIT_TO_HOME",  this.onExitToHome,   this)
+    EventBus.on("TOGGLE_MUSIC",  this.onToggleMusic,  this)
+    EventBus.on("TOGGLE_SFX",    this.onToggleSfx,    this)
+  }
+
+  private onToggleMusic(enabled: boolean): void {
+    this.audio.setMusicEnabled(enabled)
+  }
+
+  private onToggleSfx(enabled: boolean): void {
+    this.audio.setSfxEnabled(enabled)
   }
 
   private onRunStarted(): void {
@@ -226,10 +237,12 @@ export class GameScene extends Phaser.Scene {
   // ── Lifecycle ─────────────────────────────────────────────
 
   shutdown(): void {
-    EventBus.off("RUN_STARTED", this.onRunStarted, this)
-    EventBus.off("RUN_PAUSED", this.onRunPaused, this)
-    EventBus.off("RUN_RESUMED", this.onRunResumed, this)
-    EventBus.off("EXIT_TO_HOME", this.onExitToHome, this)
+    EventBus.off("RUN_STARTED",  this.onRunStarted,  this)
+    EventBus.off("RUN_PAUSED",   this.onRunPaused,   this)
+    EventBus.off("RUN_RESUMED",  this.onRunResumed,  this)
+    EventBus.off("EXIT_TO_HOME", this.onExitToHome,  this)
+    EventBus.off("TOGGLE_MUSIC", this.onToggleMusic, this)
+    EventBus.off("TOGGLE_SFX",   this.onToggleSfx,   this)
 
     this.swipe?.destroy()
     this.spawn?.destroy()

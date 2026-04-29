@@ -7,10 +7,22 @@ import type { ComboState } from '../types/game'
 // para efectos visuales in-canvas: textos flotantes, flashes de combo,
 // partículas de recompensa, etc. (Fase 16).
 
+const BTN_W  = 220
+const BTN_H  = 64
+const MARGIN = 20
+
 export class UIScene extends Phaser.Scene {
   private comboFlash!: Phaser.GameObjects.Text
   private coinCounter!: Phaser.GameObjects.Text
   private coinBg!: Phaser.GameObjects.Rectangle
+
+  private musicEnabled = true
+  private sfxEnabled   = true
+
+  private musicBtnBg!:   Phaser.GameObjects.Rectangle
+  private musicBtnLabel!: Phaser.GameObjects.Text
+  private sfxBtnBg!:     Phaser.GameObjects.Rectangle
+  private sfxBtnLabel!:  Phaser.GameObjects.Text
 
   constructor() {
     super({ key: 'UIScene', active: false })
@@ -40,9 +52,80 @@ export class UIScene extends Phaser.Scene {
       strokeThickness: 8,
     }).setOrigin(0.5).setAlpha(0)
 
+    this.musicEnabled = (this.registry.get('musicEnabled') as boolean) ?? true
+    this.sfxEnabled   = (this.registry.get('sfxEnabled')   as boolean) ?? true
+
+    this.createAudioButtons()
+
     EventBus.on('COMBO_UPDATED',     this.onComboUpdated, this)
     EventBus.on('RUN_SCORE_UPDATED', this.onScoreUpdated, this)
     EventBus.on('RUN_STARTED',       this.onRunStarted,   this)
+  }
+
+  private createAudioButtons(): void {
+    const x  = 1920 - MARGIN - BTN_W / 2
+    const y1 = MARGIN + BTN_H / 2
+    const y2 = y1 + BTN_H + 10
+
+    // ── Botón música ─────────────────────────────────────────
+    this.musicBtnBg = this.add.rectangle(x, y1, BTN_W, BTN_H, 0x111133, 0.88)
+      .setStrokeStyle(3, this.musicEnabled ? 0xf4c542 : 0xe53e3e)
+      .setInteractive({ useHandCursor: true })
+      .setDepth(100)
+
+    this.musicBtnBg.on('pointerdown', () => {
+      this.musicEnabled = !this.musicEnabled
+      this.refreshMusicBtn()
+      EventBus.emit('TOGGLE_MUSIC', this.musicEnabled)
+    })
+    this.musicBtnBg.on('pointerover',  () => this.musicBtnBg.setAlpha(1))
+    this.musicBtnBg.on('pointerout',   () => this.musicBtnBg.setAlpha(0.88))
+
+    this.musicBtnLabel = this.add.text(x, y1, this.musicLabel(), {
+      fontSize: '28px',
+      color: this.musicEnabled ? '#ffffff' : '#999999',
+      fontStyle: 'bold',
+    }).setOrigin(0.5).setDepth(101)
+
+    // ── Botón efectos de sonido ───────────────────────────────
+    this.sfxBtnBg = this.add.rectangle(x, y2, BTN_W, BTN_H, 0x111133, 0.88)
+      .setStrokeStyle(3, this.sfxEnabled ? 0xf4c542 : 0xe53e3e)
+      .setInteractive({ useHandCursor: true })
+      .setDepth(100)
+
+    this.sfxBtnBg.on('pointerdown', () => {
+      this.sfxEnabled = !this.sfxEnabled
+      this.refreshSfxBtn()
+      EventBus.emit('TOGGLE_SFX', this.sfxEnabled)
+    })
+    this.sfxBtnBg.on('pointerover',  () => this.sfxBtnBg.setAlpha(1))
+    this.sfxBtnBg.on('pointerout',   () => this.sfxBtnBg.setAlpha(0.88))
+
+    this.sfxBtnLabel = this.add.text(x, y2, this.sfxLabel(), {
+      fontSize: '28px',
+      color: this.sfxEnabled ? '#ffffff' : '#999999',
+      fontStyle: 'bold',
+    }).setOrigin(0.5).setDepth(101)
+  }
+
+  private musicLabel(): string {
+    return `♫ MUSICA  ${this.musicEnabled ? 'ON' : 'OFF'}`
+  }
+
+  private sfxLabel(): string {
+    return `♪ EFECTOS  ${this.sfxEnabled ? 'ON' : 'OFF'}`
+  }
+
+  private refreshMusicBtn(): void {
+    this.musicBtnBg.setStrokeStyle(3, this.musicEnabled ? 0xf4c542 : 0xe53e3e)
+    this.musicBtnLabel.setText(this.musicLabel())
+    this.musicBtnLabel.setColor(this.musicEnabled ? '#ffffff' : '#999999')
+  }
+
+  private refreshSfxBtn(): void {
+    this.sfxBtnBg.setStrokeStyle(3, this.sfxEnabled ? 0xf4c542 : 0xe53e3e)
+    this.sfxBtnLabel.setText(this.sfxLabel())
+    this.sfxBtnLabel.setColor(this.sfxEnabled ? '#ffffff' : '#999999')
   }
 
   private onRunStarted(): void {

@@ -132,6 +132,8 @@ export type GameEventMap = {
   RUN_ENDED: RunResult
   OPEN_PAUSE_MENU: undefined
   EXIT_TO_HOME: undefined
+  TOGGLE_MUSIC: boolean
+  TOGGLE_SFX: boolean
 }
 
 export type GameEventKey = keyof GameEventMap

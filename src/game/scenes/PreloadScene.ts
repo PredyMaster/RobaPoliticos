@@ -209,6 +209,8 @@ export class PreloadScene extends Phaser.Scene {
     for (let i = 1; i <= 4; i++) {
       this.load.audio(`sfx_slap_${i}`, `assets/audio/sound%20effects/slaps/Slap${i}.mp3`)
     }
+
+    this.load.audio('bgm', 'assets/audio/background%20music/robaPoliticosSong.mp3')
   }
 
   create(): void {
