@@ -1,4 +1,4 @@
-import Phaser from 'phaser'
+import * as Phaser from 'phaser'
 import { SCENE_W, GROUND_Y } from '../scenes/GameScene'
 
 const PLAYER_W = 120

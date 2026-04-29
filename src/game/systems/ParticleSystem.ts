@@ -1,4 +1,4 @@
-import Phaser from 'phaser'
+import * as Phaser from 'phaser'
 import type { CoinTypeId, GraphicsQuality } from '../types/game'
 import { SCENE_W, SCENE_H } from '../scenes/GameScene'
 

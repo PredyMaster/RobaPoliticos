@@ -1,4 +1,4 @@
-import Phaser from 'phaser'
+import * as Phaser from 'phaser'
 import { buildGameConfig } from './config/gameConfig'
 import type { GraphicsQuality } from './types/game'
 

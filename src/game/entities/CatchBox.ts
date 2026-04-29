@@ -1,4 +1,4 @@
-import Phaser from 'phaser'
+import * as Phaser from 'phaser'
 import type { BoxItem } from '../types/game'
 import { SCENE_W, GROUND_Y } from '../scenes/GameScene'
 import type { Coin } from './Coin'

@@ -1,4 +1,4 @@
-import Phaser from 'phaser'
+import * as Phaser from 'phaser'
 import type { ComboState, RunResult } from '../types/game'
 import type { ScoreSystem } from './ScoreSystem'
 import type { CollisionSystem } from './CollisionSystem'

@@ -1,4 +1,4 @@
-import Phaser from 'phaser'
+import * as Phaser from 'phaser'
 import type { ObjectPool } from './ObjectPool'
 import type { Coin } from '../entities/Coin'
 import type { PlayerCharacter } from '../entities/PlayerCharacter'

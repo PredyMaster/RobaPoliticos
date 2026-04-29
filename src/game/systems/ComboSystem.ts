@@ -1,4 +1,4 @@
-import Phaser from 'phaser'
+import * as Phaser from 'phaser'
 import type { ComboState } from '../types/game'
 import { comboMultiplier } from '../utils/math'
 import { EventBus } from '../EventBus'

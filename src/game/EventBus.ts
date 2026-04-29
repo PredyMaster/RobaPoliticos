@@ -1,4 +1,4 @@
-import Phaser from 'phaser'
+import * as Phaser from 'phaser'
 import type { GameEventKey, GameEventMap } from './types/game'
 
 // Singleton tipado que comunica Phaser ↔ React

@@ -1,4 +1,4 @@
-import Phaser from 'phaser'
+import * as Phaser from 'phaser'
 import type { CoinTypeId, CoinState } from '../types/game'
 import { COIN_LIFETIME_MS } from '../data/coins'
 

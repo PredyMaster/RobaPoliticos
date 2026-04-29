@@ -1,4 +1,4 @@
-import Phaser from 'phaser'
+import * as Phaser from 'phaser'
 import type { PlayerCharacter } from '../entities/PlayerCharacter'
 import type { Weapon } from '../types/game'
 import { swipeStrength, normalize } from '../utils/math'

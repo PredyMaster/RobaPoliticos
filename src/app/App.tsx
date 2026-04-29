@@ -26,7 +26,7 @@ export default function App() {
 
           {/* Protegidas */}
           <Route path="/home"     element={<P><HomeScreen /></P>} />
-          <Route path="/game"     element={<P><GameScreen /></P>} />
+          <Route path="/game"     element={<GameScreen />} />
           <Route path="/shop"     element={<P><ShopScreen /></P>} />
           <Route path="/ranking"  element={<P><RankingScreen /></P>} />
           <Route path="/profile"  element={<P><ProfileScreen /></P>} />

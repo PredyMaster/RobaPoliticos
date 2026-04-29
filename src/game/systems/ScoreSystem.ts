@@ -1,4 +1,4 @@
-import Phaser from 'phaser'
+import * as Phaser from 'phaser'
 import type { CoinTypeId, ComboState } from '../types/game'
 import { EventBus } from '../EventBus'
 

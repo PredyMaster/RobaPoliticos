@@ -1,4 +1,4 @@
-import Phaser from 'phaser'
+import * as Phaser from 'phaser'
 import { Haptics, ImpactStyle, NotificationType } from '@capacitor/haptics'
 import type { ComboState } from '../types/game'
 import type { SwipeHitEvent } from './SwipeSystem'

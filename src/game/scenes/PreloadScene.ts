@@ -1,10 +1,21 @@
-import Phaser from 'phaser'
+import * as Phaser from 'phaser'
 import { EventBus } from '../EventBus'
 import { toneDataUrl } from '../utils/audio'
 
-// Dimensiones de la pantalla base
 const W = 1920
 const H = 1080
+
+// Pon estos archivos en public/assets/ para reemplazar los placeholders:
+//   player.png        120×160   (político de cuerpo entero, pies abajo, PNG transparente)
+//   weapon_cursor.png 128×48    (mano+arma apuntando →, mango en el lado IZQUIERDO)
+//   catch_box.png     200×80    (caja/maletín, PNG transparente)
+//   bg.png            1920×1080 (fondo de escena, opcional)
+const REAL_SPRITES: Record<string, string> = {
+  player:         'assets/player.png',
+  weapon_cursor:  'assets/weapon_cursor.png',
+  catch_box:      'assets/catch_box.png',
+  bg:             'assets/bg.png',
+}
 
 export class PreloadScene extends Phaser.Scene {
   private progressBar!: Phaser.GameObjects.Graphics
@@ -17,7 +28,21 @@ export class PreloadScene extends Phaser.Scene {
   preload(): void {
     this.createLoadingUI()
     this.registerLoadEvents()
-    this.generatePlaceholderTextures()
+
+    // Para cada sprite real: si el archivo falla, generamos el placeholder
+    this.load.on('loaderror', (file: Phaser.Loader.File) => {
+      console.warn(`[PreloadScene] No se encontró ${file.key}, usando placeholder`)
+      this.generatePlaceholderFor(file.key)
+    })
+
+    // Intentar cargar sprites reales desde public/assets/
+    for (const [key, path] of Object.entries(REAL_SPRITES)) {
+      this.load.image(key, path)
+    }
+
+    // Placeholders de monedas y plataforma (no tienen sprite real, se generan siempre)
+    this.generateStaticPlaceholders()
+
     this.loadPlaceholderAudio()
   }
 
@@ -31,7 +56,7 @@ export class PreloadScene extends Phaser.Scene {
 
     this.progressBar = this.add.graphics()
 
-    this.add.text(cx, cy - 60, '💰 Roba Políticos', {
+    this.add.text(cx, cy - 60, 'Roba Políticos', {
       fontSize: '40px',
       color: '#f4c542',
       fontStyle: 'bold',
@@ -59,21 +84,50 @@ export class PreloadScene extends Phaser.Scene {
     })
   }
 
-  // Crea texturas placeholder con gráficos de Phaser hasta que lleguen los sprites reales
-  private generatePlaceholderTextures(): void {
+  // Genera placeholder SOLO para la key que falló al cargar
+  private generatePlaceholderFor(key: string): void {
     const gfx = this.make.graphics({ add: false })
 
-    // ── Personaje (piñata placeholder) ───────────────────────
-    gfx.clear()
-    gfx.fillStyle(0xf4c542)
-    gfx.fillCircle(60, 80, 60)      // cuerpo
-    gfx.fillStyle(0xc49b10)
-    gfx.fillCircle(60, 28, 28)      // cabeza
-    gfx.fillStyle(0xff6b6b)
-    gfx.fillRect(40, 100, 40, 60)   // piernas
-    gfx.generateTexture('player', 120, 160)
+    switch (key) {
+      case 'player':
+        gfx.fillStyle(0xf4c542)
+        gfx.fillCircle(60, 80, 60)
+        gfx.fillStyle(0xc49b10)
+        gfx.fillCircle(60, 28, 28)
+        gfx.fillStyle(0xff6b6b)
+        gfx.fillRect(40, 100, 40, 60)
+        gfx.generateTexture('player', 120, 160)
+        break
 
-    // ── Monedas ───────────────────────────────────────────────
+      case 'weapon_cursor':
+        gfx.fillStyle(0xf4c542)
+        gfx.fillRect(0, 6, 48, 10)
+        gfx.fillTriangle(48, 0, 48, 22, 64, 11)
+        gfx.generateTexture('weapon_cursor', 64, 22)
+        break
+
+      case 'catch_box':
+        gfx.lineStyle(4, 0xf4c542)
+        gfx.strokeRect(0, 0, 200, 80)
+        gfx.fillStyle(0xf4c542, 0.12)
+        gfx.fillRect(0, 0, 200, 80)
+        gfx.generateTexture('catch_box', 200, 80)
+        break
+
+      case 'bg':
+        gfx.fillGradientStyle(0x0f0f1e, 0x0f0f1e, 0x1a1a2e, 0x1a1a2e, 1)
+        gfx.fillRect(0, 0, W, H)
+        gfx.generateTexture('bg', W, H)
+        break
+    }
+
+    gfx.destroy()
+  }
+
+  // Placeholders que siempre se generan (monedas, plataforma — no tienen sprite real)
+  private generateStaticPlaceholders(): void {
+    const gfx = this.make.graphics({ add: false })
+
     const coinDefs: Array<[string, number, number]> = [
       ['coin_normal',     0xffd700, 16],
       ['coin_silver',     0xc0c0c0, 16],
@@ -90,7 +144,6 @@ export class PreloadScene extends Phaser.Scene {
       gfx.generateTexture(key, r * 2, r * 2)
     }
 
-    // Billete
     gfx.clear()
     gfx.fillStyle(0x4ade80)
     gfx.fillRect(0, 0, 56, 28)
@@ -98,34 +151,12 @@ export class PreloadScene extends Phaser.Scene {
     gfx.strokeRect(2, 2, 52, 24)
     gfx.generateTexture('money_bill', 56, 28)
 
-    // ── Caja receptora ────────────────────────────────────────
-    gfx.clear()
-    gfx.lineStyle(4, 0xf4c542)
-    gfx.strokeRect(0, 0, 200, 80)
-    gfx.fillStyle(0xf4c542, 0.12)
-    gfx.fillRect(0, 0, 200, 80)
-    gfx.generateTexture('catch_box', 200, 80)
-
-    // ── Plataforma ────────────────────────────────────────────
     gfx.clear()
     gfx.fillStyle(0x2a2a4e)
     gfx.fillRect(0, 0, W, 40)
     gfx.lineStyle(2, 0x4a4a8e)
     gfx.strokeRect(0, 0, W, 40)
     gfx.generateTexture('platform', W, 40)
-
-    // ── Cursor de arma ────────────────────────────────────────
-    gfx.clear()
-    gfx.fillStyle(0xf4c542)
-    gfx.fillRect(0, 6, 48, 10)
-    gfx.fillTriangle(48, 0, 48, 22, 64, 11)
-    gfx.generateTexture('weapon_cursor', 64, 22)
-
-    // ── Fondo de escena ───────────────────────────────────────
-    gfx.clear()
-    gfx.fillGradientStyle(0x0f0f1e, 0x0f0f1e, 0x1a1a2e, 0x1a1a2e, 1)
-    gfx.fillRect(0, 0, W, H)
-    gfx.generateTexture('bg', W, H)
 
     gfx.destroy()
   }
@@ -140,8 +171,7 @@ export class PreloadScene extends Phaser.Scene {
   }
 
   create(): void {
-    // Lanzar GameScene y UIScene en paralelo; detener PreloadScene
-    // GAME_READY lo emite GameScene cuando todos sus sistemas están listos
+    EventBus.emit('PRELOAD_COMPLETE')
     this.scene.launch('GameScene')
     this.scene.launch('UIScene')
     this.scene.stop()
