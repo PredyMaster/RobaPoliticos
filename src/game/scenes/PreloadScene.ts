@@ -172,12 +172,17 @@ export class PreloadScene extends Phaser.Scene {
   }
 
   private loadPlaceholderAudio(): void {
-    this.load.audio('sfx_hit',       toneDataUrl(160,  130, 0.40, 'sine'))
-    this.load.audio('sfx_crit',      toneDataUrl(520,  110, 0.45, 'square'))
-    this.load.audio('sfx_coin',      toneDataUrl(880,   80, 0.35, 'sine'))
     this.load.audio('sfx_coin_rare', toneDataUrl(1320, 100, 0.40, 'sine'))
     this.load.audio('sfx_combo',     toneDataUrl(660,  120, 0.50, 'sine'))
     this.load.audio('sfx_purchase',  toneDataUrl(659,  200, 0.45, 'sine'))
+
+    for (let i = 1; i <= 5; i++) {
+      this.load.audio(`sfx_coin_${i}`, `assets/audio/sound%20effects/coins/Coin${i}.mp3`)
+    }
+
+    for (let i = 1; i <= 4; i++) {
+      this.load.audio(`sfx_slap_${i}`, `assets/audio/sound%20effects/slaps/Slap${i}.mp3`)
+    }
   }
 
   create(): void {

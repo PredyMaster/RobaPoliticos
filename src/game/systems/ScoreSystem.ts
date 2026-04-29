@@ -30,14 +30,15 @@ export class ScoreSystem {
   }
 
   private onCoinCaught({ baseValue, coinType }: CoinCaughtEvent): void {
-    if (baseValue <= 0) return  // special coins have value 0
-
-    const finalValue = Math.round(baseValue * this.comboMultiplier)
-    this.runScore   += finalValue
     this.totalCoins++
 
+    if (baseValue > 0) {
+      const finalValue = Math.round(baseValue * this.comboMultiplier)
+      this.runScore += finalValue
+      EventBus.emit('COINS_COLLECTED', { amount: 1, coinType })
+    }
+
     EventBus.emit('RUN_SCORE_UPDATED', { runScore: this.runScore, totalCoins: this.totalCoins })
-    EventBus.emit('COINS_COLLECTED',   { amount: 1, coinType })
   }
 
   destroy(): void {

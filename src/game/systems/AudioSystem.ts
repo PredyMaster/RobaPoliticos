@@ -11,11 +11,9 @@ export class AudioSystem {
   private readonly scene: Phaser.Scene
   private musicEnabled: boolean
   private sfxEnabled:   boolean
-  private unlocked    = false
 
-  private sfxHit!:      Phaser.Sound.BaseSound | null
-  private sfxCrit!:     Phaser.Sound.BaseSound | null
-  private sfxCoin!:     Phaser.Sound.BaseSound | null
+  private sfxSlaps!:    (Phaser.Sound.BaseSound | null)[]
+  private sfxCoins!:    (Phaser.Sound.BaseSound | null)[]
   private sfxCoinRare!: Phaser.Sound.BaseSound | null
   private sfxCombo!:    Phaser.Sound.BaseSound | null
   private sfxPurchase!: Phaser.Sound.BaseSound | null
@@ -25,14 +23,12 @@ export class AudioSystem {
     this.musicEnabled = musicEnabled
     this.sfxEnabled   = sfxEnabled
 
-    this.sfxHit      = this.tryAdd('sfx_hit',       { volume: 0.55 })
-    this.sfxCrit     = this.tryAdd('sfx_crit',      { volume: 0.70 })
-    this.sfxCoin     = this.tryAdd('sfx_coin',      { volume: 0.45 })
+    this.sfxSlaps    = [1, 2, 3, 4].map(i => this.tryAdd(`sfx_slap_${i}`, { volume: 0.70 }))
+    this.sfxCoins    = [1, 2, 3, 4, 5].map(i => this.tryAdd(`sfx_coin_${i}`, { volume: 0.55 }))
     this.sfxCoinRare = this.tryAdd('sfx_coin_rare', { volume: 0.55 })
     this.sfxCombo    = this.tryAdd('sfx_combo',     { volume: 0.60 })
     this.sfxPurchase = this.tryAdd('sfx_purchase',  { volume: 0.65 })
 
-    scene.input.once('pointerdown',   this.unlock,         this)
     scene.events.on('swipe:hit',      this.onSwipeHit,     this)
     scene.events.on('coin:caught',    this.onCoinCaught,   this)
     scene.events.on('combo:changed',  this.onComboChanged, this)
@@ -42,7 +38,7 @@ export class AudioSystem {
   setSfxEnabled(value: boolean): void   { this.sfxEnabled   = value }
 
   playPurchase(): void {
-    if (!this.sfxEnabled || !this.unlocked) return
+    if (!this.sfxEnabled) return
     this.sfxPurchase?.play()
   }
 
@@ -54,41 +50,41 @@ export class AudioSystem {
     // Fade out — wired in a future phase
   }
 
-  private onSwipeHit(e: SwipeHitEvent): void {
-    if (!this.sfxEnabled || !this.unlocked) return
-    if (e.isCritical) this.sfxCrit?.play()
-    else              this.sfxHit?.play()
+  private onSwipeHit(_e: SwipeHitEvent): void {
+    if (!this.sfxEnabled) return
+    const sfx = this.sfxSlaps[Math.floor(Math.random() * this.sfxSlaps.length)]
+    sfx?.play()
   }
 
   private onCoinCaught(e: CoinCaughtEvent): void {
-    if (!this.sfxEnabled || !this.unlocked) return
-    if (RARE_COIN.has(e.coinType)) this.sfxCoinRare?.play()
-    else                           this.sfxCoin?.play()
+    if (!this.sfxEnabled) return
+    if (RARE_COIN.has(e.coinType)) {
+      this.sfxCoinRare?.play()
+    } else {
+      const sfx = this.sfxCoins[Math.floor(Math.random() * this.sfxCoins.length)]
+      sfx?.play()
+    }
   }
 
   private onComboChanged(combo: ComboState): void {
-    if (!this.sfxEnabled || !this.unlocked || !COMBO_BEATS.has(combo.count)) return
+    if (!this.sfxEnabled || !COMBO_BEATS.has(combo.count)) return
     this.sfxCombo?.play()
   }
 
-  private unlock(): void {
-    this.unlocked = true
-    this.playMusic()
-  }
-
   private tryAdd(key: string, cfg: Phaser.Types.Sound.SoundConfig): Phaser.Sound.BaseSound | null {
-    if (!this.scene.cache.audio.exists(key)) return null
+    if (!this.scene.cache.audio.exists(key)) {
+      console.warn(`[AudioSystem] audio key not in cache: ${key}`)
+      return null
+    }
     return this.scene.sound.add(key, cfg)
   }
 
   destroy(): void {
-    this.scene.input.off('pointerdown',   this.unlock,        this)
     this.scene.events.off('swipe:hit',    this.onSwipeHit,    this)
     this.scene.events.off('coin:caught',  this.onCoinCaught,  this)
     this.scene.events.off('combo:changed', this.onComboChanged, this)
-    this.sfxHit?.destroy()
-    this.sfxCrit?.destroy()
-    this.sfxCoin?.destroy()
+    this.sfxSlaps.forEach(s => s?.destroy())
+    this.sfxCoins.forEach(s => s?.destroy())
     this.sfxCoinRare?.destroy()
     this.sfxCombo?.destroy()
     this.sfxPurchase?.destroy()

@@ -161,12 +161,9 @@ export class GameScene extends Phaser.Scene {
   // ── Gameplay loop ─────────────────────────────────────────
 
   update(time: number, delta: number): void {
-    // La caja se mueve siempre (visible aunque no haya partida activa)
     this.box.updateMovement(delta)
-    // Permitimos golpear y soltar monedas también fuera de partida (modo test).
-    // La captura por la caja queda gateada para no contar puntos sin run activo.
     this.checkWeaponPlayerHit(time)
-    this.collision.update(this.isRunning)
+    this.collision.update(true)
     if (this.isRunning) {
       this.box.applyMagnet(this.pool.getActive())
     }

@@ -1,13 +1,13 @@
-import { useRef, useEffect, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { useGameStore } from '../store/useGameStore'
-import { useInventoryStore } from '../store/useInventoryStore'
-import { usePlayerStore } from '../store/usePlayerStore'
-import { EventBus } from '../game/EventBus'
-import * as Phaser from 'phaser'
-import { createGame } from '../game/PhaserGame'
-import type { ComboState, RunResult } from '../game/types/game'
-import { C, FONT } from './shared/theme'
+import { useRef, useEffect, useCallback } from "react"
+import { useNavigate } from "react-router-dom"
+import { useGameStore } from "../store/useGameStore"
+import { useInventoryStore } from "../store/useInventoryStore"
+import { usePlayerStore } from "../store/usePlayerStore"
+import { EventBus } from "../game/EventBus"
+import * as Phaser from "phaser"
+import { createGame } from "../game/PhaserGame"
+import type { ComboState, RunResult } from "../game/types/game"
+import { C, FONT } from "./shared/theme"
 
 // ── HUD ──────────────────────────────────────────────────────
 
@@ -21,33 +21,40 @@ function GameHUD({ onPause }: { onPause: () => void }) {
   return (
     <div
       style={{
-        position: 'absolute',
+        position: "absolute",
         top: 0,
         left: 0,
         right: 0,
-        padding: '12px 16px',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
+        padding: "12px 16px",
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
         zIndex: 10,
-        background: 'linear-gradient(to bottom, rgba(0,0,0,0.55), transparent)',
+        background: "linear-gradient(to bottom, rgba(0,0,0,0.55), transparent)",
         fontFamily: FONT,
       }}
     >
-      <span style={{ color: '#fff', fontSize: 20, fontWeight: 700 }}>🪙 {runCoins}</span>
-
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-        <span style={{ color: C.gold, fontSize: 28, fontWeight: 800 }}>{runScore.toLocaleString()}</span>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 2,
+        }}
+      >
+        <span style={{ color: C.gold, fontSize: 28, fontWeight: 800 }}>
+          {runScore.toLocaleString()}
+        </span>
         {showCombo && (
           <span
             style={{
-              color: '#fff',
+              color: "#fff",
               fontSize: 13,
               fontWeight: 700,
               background: `linear-gradient(90deg, ${C.goldDk}, ${C.gold})`,
               borderRadius: 6,
-              padding: '2px 8px',
-              letterSpacing: '0.04em',
+              padding: "2px 8px",
+              letterSpacing: "0.04em",
             }}
           >
             ×{runCombo!.multiplier.toFixed(1)} · {runCombo!.count} combo
@@ -58,12 +65,12 @@ function GameHUD({ onPause }: { onPause: () => void }) {
       <button
         onClick={onPause}
         style={{
-          background: 'rgba(0,0,0,0.45)',
-          border: '1px solid rgba(255,255,255,0.25)',
-          color: '#fff',
-          padding: '6px 14px',
+          background: "rgba(0,0,0,0.45)",
+          border: "1px solid rgba(255,255,255,0.25)",
+          color: "#fff",
+          padding: "6px 14px",
           borderRadius: 8,
-          cursor: 'pointer',
+          cursor: "pointer",
           fontSize: 16,
           fontFamily: FONT,
           minWidth: 44,
@@ -72,6 +79,37 @@ function GameHUD({ onPause }: { onPause: () => void }) {
       >
         II
       </button>
+    </div>
+  )
+}
+
+// ── Coin counter overlay ──────────────────────────────────────
+
+function CoinCounter() {
+  const runCoins = useGameStore((s) => s.runCoins)
+
+  return (
+    <div
+      style={{
+        position: "absolute",
+        top: 160,
+        left: 160,
+        zIndex: 50,
+        display: "flex",
+        alignItems: "center",
+        gap: 6,
+        background: "rgba(0,0,0,0.6)",
+        borderRadius: 10,
+        padding: "8px 14px",
+        pointerEvents: "none",
+      }}
+    >
+      <span style={{ fontSize: 20 }}>🪙</span>
+      <span
+        style={{ color: "#fff", fontSize: 24, fontWeight: 800, lineHeight: 1 }}
+      >
+        {runCoins}
+      </span>
     </div>
   )
 }
@@ -90,15 +128,17 @@ function ToggleRow({
   return (
     <div
       style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: '10px 16px',
-        background: 'rgba(255,255,255,0.06)',
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        padding: "10px 16px",
+        background: "rgba(255,255,255,0.06)",
         borderRadius: 8,
       }}
     >
-      <span style={{ color: '#fff', fontSize: 14, fontFamily: FONT }}>{label}</span>
+      <span style={{ color: "#fff", fontSize: 14, fontFamily: FONT }}>
+        {label}
+      </span>
       <div
         role="switch"
         aria-checked={value}
@@ -107,23 +147,23 @@ function ToggleRow({
           width: 42,
           height: 24,
           borderRadius: 12,
-          background: value ? C.gold : 'rgba(255,255,255,0.2)',
-          cursor: 'pointer',
-          position: 'relative',
-          transition: 'background 0.2s',
+          background: value ? C.gold : "rgba(255,255,255,0.2)",
+          cursor: "pointer",
+          position: "relative",
+          transition: "background 0.2s",
           flexShrink: 0,
         }}
       >
         <div
           style={{
-            position: 'absolute',
+            position: "absolute",
             top: 3,
             left: value ? 21 : 3,
             width: 18,
             height: 18,
-            borderRadius: '50%',
-            background: '#fff',
-            transition: 'left 0.2s',
+            borderRadius: "50%",
+            background: "#fff",
+            transition: "left 0.2s",
           }}
         />
       </div>
@@ -133,43 +173,77 @@ function ToggleRow({
 
 // ── Pause overlay ─────────────────────────────────────────────
 
-function PauseOverlay({ onResume, onExit }: { onResume: () => void; onExit: () => void }) {
-  const musicEnabled     = useGameStore((s) => s.musicEnabled)
-  const sfxEnabled       = useGameStore((s) => s.sfxEnabled)
+function PauseOverlay({
+  onResume,
+  onExit,
+}: {
+  onResume: () => void
+  onExit: () => void
+}) {
+  const musicEnabled = useGameStore((s) => s.musicEnabled)
+  const sfxEnabled = useGameStore((s) => s.sfxEnabled)
   const vibrationEnabled = useGameStore((s) => s.vibrationEnabled)
-  const setMusic         = useGameStore((s) => s.setMusicEnabled)
-  const setSfx           = useGameStore((s) => s.setSfxEnabled)
-  const setVibration     = useGameStore((s) => s.setVibrationEnabled)
+  const setMusic = useGameStore((s) => s.setMusicEnabled)
+  const setSfx = useGameStore((s) => s.setSfxEnabled)
+  const setVibration = useGameStore((s) => s.setVibrationEnabled)
 
   return (
     <div
       style={{
-        position: 'absolute',
+        position: "absolute",
         inset: 0,
-        background: 'rgba(0,0,0,0.82)',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
+        background: "rgba(0,0,0,0.82)",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
         zIndex: 100,
         fontFamily: FONT,
       }}
     >
-      <h2 style={{ color: C.gold, fontSize: 28, margin: '0 0 24px', fontWeight: 800 }}>Pausa</h2>
+      <h2
+        style={{
+          color: C.gold,
+          fontSize: 28,
+          margin: "0 0 24px",
+          fontWeight: 800,
+        }}
+      >
+        Pausa
+      </h2>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 28, width: 260 }}>
-        <ToggleRow label="🎵 Música"    value={musicEnabled}     onChange={setMusic} />
-        <ToggleRow label="🔊 Efectos"   value={sfxEnabled}       onChange={setSfx} />
-        <ToggleRow label="📳 Vibración" value={vibrationEnabled} onChange={setVibration} />
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 10,
+          marginBottom: 28,
+          width: 260,
+        }}
+      >
+        <ToggleRow label="🎵 Música" value={musicEnabled} onChange={setMusic} />
+        <ToggleRow label="🔊 Efectos" value={sfxEnabled} onChange={setSfx} />
+        <ToggleRow
+          label="📳 Vibración"
+          value={vibrationEnabled}
+          onChange={setVibration}
+        />
       </div>
 
       <button
         onClick={onResume}
         style={{
-          width: 260, padding: '14px',
-          background: C.gold, border: 'none', borderRadius: 10,
-          color: '#1a1a2e', fontSize: 16, fontWeight: 700,
-          cursor: 'pointer', fontFamily: FONT, marginBottom: 10,
+          width: 260,
+          padding: "14px",
+          background: C.gold,
+          border: "none",
+          borderRadius: 10,
+          color: "#1a1a2e",
+          fontSize: 16,
+          fontWeight: 700,
+          cursor: "pointer",
+          fontFamily: FONT,
+          marginBottom: 10,
         }}
       >
         ▶ Continuar
@@ -178,11 +252,15 @@ function PauseOverlay({ onResume, onExit }: { onResume: () => void; onExit: () =
       <button
         onClick={onExit}
         style={{
-          width: 260, padding: '12px',
-          background: 'rgba(255,255,255,0.07)',
-          border: `1px solid ${C.border}`, borderRadius: 10,
-          color: '#fff', fontSize: 15,
-          cursor: 'pointer', fontFamily: FONT,
+          width: 260,
+          padding: "12px",
+          background: "rgba(255,255,255,0.07)",
+          border: `1px solid ${C.border}`,
+          borderRadius: 10,
+          color: "#fff",
+          fontSize: 15,
+          cursor: "pointer",
+          fontFamily: FONT,
         }}
       >
         ✕ Salir al menú
@@ -194,40 +272,40 @@ function PauseOverlay({ onResume, onExit }: { onResume: () => void; onExit: () =
 // ── GameScreen ────────────────────────────────────────────────
 
 export function GameScreen() {
-  const navigate       = useNavigate()
-  const containerRef   = useRef<HTMLDivElement>(null)
-  const gameRef        = useRef<Phaser.Game | null>(null)
+  const navigate = useNavigate()
+  const containerRef = useRef<HTMLDivElement>(null)
+  const gameRef = useRef<Phaser.Game | null>(null)
 
   // ── Stores ────────────────────────────────────────────────
-  const isRunActive    = useGameStore((s) => s.isRunActive)
-  const isPaused       = useGameStore((s) => s.isPaused)
-  const startRun       = useGameStore((s) => s.startRun)
-  const pauseRun       = useGameStore((s) => s.pauseRun)
-  const resumeRun      = useGameStore((s) => s.resumeRun)
-  const showPauseMenu  = useGameStore((s) => s.showPauseMenu)
+  const isRunActive = useGameStore((s) => s.isRunActive)
+  const isPaused = useGameStore((s) => s.isPaused)
+  const startRun = useGameStore((s) => s.startRun)
+  const pauseRun = useGameStore((s) => s.pauseRun)
+  const resumeRun = useGameStore((s) => s.resumeRun)
+  const showPauseMenu = useGameStore((s) => s.showPauseMenu)
   const updateRunScore = useGameStore((s) => s.updateRunScore)
-  const updateCombo    = useGameStore((s) => s.updateCombo)
-  const endRun         = useGameStore((s) => s.endRun)
-  const musicEnabled     = useGameStore((s) => s.musicEnabled)
-  const sfxEnabled       = useGameStore((s) => s.sfxEnabled)
+  const updateCombo = useGameStore((s) => s.updateCombo)
+  const endRun = useGameStore((s) => s.endRun)
+  const musicEnabled = useGameStore((s) => s.musicEnabled)
+  const sfxEnabled = useGameStore((s) => s.sfxEnabled)
   const vibrationEnabled = useGameStore((s) => s.vibrationEnabled)
-  const quality          = useGameStore((s) => s.quality)
+  const quality = useGameStore((s) => s.quality)
 
-  const equipment  = useInventoryStore((s) => s.equipment)
-  const profile    = usePlayerStore((s) => s.profile)
+  const equipment = useInventoryStore((s) => s.equipment)
+  const profile = usePlayerStore((s) => s.profile)
 
   // ── Phaser bootstrap ──────────────────────────────────────
   useEffect(() => {
     if (!containerRef.current) return
 
     gameRef.current = createGame(containerRef.current, {
-      equippedWeaponId: equipment?.equippedWeaponId ?? 'hand_basic',
-      equippedBoxId:    equipment?.equippedBoxId    ?? 'small_box',
+      equippedWeaponId: equipment?.equippedWeaponId ?? "hand_basic",
+      equippedBoxId: equipment?.equippedBoxId ?? "small_box",
       musicEnabled,
       sfxEnabled,
       vibrationEnabled,
       quality,
-      username: profile?.username ?? 'Player',
+      username: profile?.username ?? "Player",
     })
 
     return () => {
@@ -240,8 +318,8 @@ export function GameScreen() {
 
   // Salir: notifica a Phaser (si está activo) y navega
   const handleExit = useCallback(() => {
-    EventBus.emit('EXIT_TO_HOME')
-    navigate('/home')
+    EventBus.emit("EXIT_TO_HOME")
+    navigate("/home")
   }, [navigate])
 
   // ── Bridge Phaser → React ─────────────────────────────────
@@ -257,7 +335,7 @@ export function GameScreen() {
     // Phaser señala fin de partida → guardamos y navegamos
     const onRunEnded = (result: RunResult) => {
       endRun(result) // fire-and-forget; EndRunScreen muestra "Guardando…" mientras isSubmitting=true
-      navigate('/end-run', { replace: true })
+      navigate("/end-run", { replace: true })
     }
 
     // Phaser quiere mostrar el menú de pausa (p.ej. botón físico Android)
@@ -267,32 +345,32 @@ export function GameScreen() {
 
     // Phaser pide salir al home (p.ej. tiempo agotado + timeout de gracia)
     const onPhaserExitToHome = () => {
-      navigate('/home', { replace: true })
+      navigate("/home", { replace: true })
     }
 
-    EventBus.on('RUN_SCORE_UPDATED', onScoreUpdated)
-    EventBus.on('COMBO_UPDATED',     onComboUpdated)
-    EventBus.on('RUN_ENDED',         onRunEnded)
-    EventBus.on('OPEN_PAUSE_MENU',   onOpenPauseMenu)
-    EventBus.on('EXIT_TO_HOME',      onPhaserExitToHome)
+    EventBus.on("RUN_SCORE_UPDATED", onScoreUpdated)
+    EventBus.on("COMBO_UPDATED", onComboUpdated)
+    EventBus.on("RUN_ENDED", onRunEnded)
+    EventBus.on("OPEN_PAUSE_MENU", onOpenPauseMenu)
+    EventBus.on("EXIT_TO_HOME", onPhaserExitToHome)
 
     return () => {
-      EventBus.off('RUN_SCORE_UPDATED', onScoreUpdated)
-      EventBus.off('COMBO_UPDATED',     onComboUpdated)
-      EventBus.off('RUN_ENDED',         onRunEnded)
-      EventBus.off('OPEN_PAUSE_MENU',   onOpenPauseMenu)
-      EventBus.off('EXIT_TO_HOME',      onPhaserExitToHome)
+      EventBus.off("RUN_SCORE_UPDATED", onScoreUpdated)
+      EventBus.off("COMBO_UPDATED", onComboUpdated)
+      EventBus.off("RUN_ENDED", onRunEnded)
+      EventBus.off("OPEN_PAUSE_MENU", onOpenPauseMenu)
+      EventBus.off("EXIT_TO_HOME", onPhaserExitToHome)
     }
   }, [updateRunScore, updateCombo, endRun, showPauseMenu, navigate])
 
   return (
     <div
       style={{
-        width: '100vw',
-        height: '100dvh',
-        background: '#000',
-        position: 'relative',
-        overflow: 'hidden',
+        width: "100vw",
+        height: "100dvh",
+        background: "#000",
+        position: "relative",
+        overflow: "hidden",
         fontFamily: FONT,
       }}
     >
@@ -300,48 +378,58 @@ export function GameScreen() {
       <div
         ref={containerRef}
         id="phaser-container"
-        style={{ width: '100%', height: '100%' }}
+        style={{ width: "100%", height: "100%" }}
       />
 
       {/* Overlay de inicio (sobre el canvas de Phaser mientras no hay partida activa) */}
       {!isRunActive && (
         <div
           style={{
-            position: 'absolute',
+            position: "absolute",
             inset: 0,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
             gap: 14,
-            pointerEvents: 'none', // pasa eventos al canvas salvo los botones
+            pointerEvents: "none", // pasa eventos al canvas salvo los botones
           }}
         >
           <button
             onClick={startRun}
             style={{
-              padding: '16px 48px',
-              background: C.gold, border: 'none', borderRadius: 12,
-              color: '#1a1a2e', fontSize: 18, fontWeight: 700,
-              cursor: 'pointer', fontFamily: FONT,
-              pointerEvents: 'auto',
+              padding: "16px 48px",
+              background: C.gold,
+              border: "none",
+              borderRadius: 12,
+              color: "#1a1a2e",
+              fontSize: 18,
+              fontWeight: 700,
+              cursor: "pointer",
+              fontFamily: FONT,
+              pointerEvents: "auto",
             }}
           >
             ▶ Iniciar Partida
           </button>
           <button
-            onClick={() => navigate('/home')}
+            onClick={() => navigate("/home")}
             style={{
-              background: 'none', border: 'none',
-              color: 'rgba(255,255,255,0.45)', fontSize: 13,
-              cursor: 'pointer', fontFamily: FONT,
-              pointerEvents: 'auto',
+              background: "none",
+              border: "none",
+              color: "rgba(255,255,255,0.45)",
+              fontSize: 13,
+              cursor: "pointer",
+              fontFamily: FONT,
+              pointerEvents: "auto",
             }}
           >
             ← Volver al menú
           </button>
         </div>
       )}
+
+      <CoinCounter />
 
       {isRunActive && <GameHUD onPause={pauseRun} />}
 
