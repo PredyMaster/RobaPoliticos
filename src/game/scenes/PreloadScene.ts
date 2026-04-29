@@ -6,14 +6,16 @@ const W = 1920
 const H = 1080
 
 // Pon estos archivos en public/assets/ para reemplazar los placeholders:
-//   player.png        120×160   (político de cuerpo entero, pies abajo, PNG transparente)
-//   weapon_cursor.png 128×48    (mano+arma apuntando →, mango en el lado IZQUIERDO)
-//   catch_box.png     200×80    (caja/maletín, PNG transparente)
+//   player.png        464×515   (político de cuerpo entero, pies abajo, PNG transparente)
+//   weapon_cursor.png 264×242   (mano+arma apuntando →, mango en el lado IZQUIERDO)
+//   catch_box.png     768×480   (caja/maletín, PNG transparente)
+//   coin.png          ―         (moneda que sale al golpear al player)
 //   bg.png            1920×1080 (fondo de escena, opcional)
 const REAL_SPRITES: Record<string, string> = {
   player:         'assets/player.png',
   weapon_cursor:  'assets/weapon_cursor.png',
   catch_box:      'assets/catch_box.png',
+  coin_normal:    'assets/coin.png',
   bg:             'assets/bg.png',
 }
 
@@ -91,27 +93,35 @@ export class PreloadScene extends Phaser.Scene {
     switch (key) {
       case 'player':
         gfx.fillStyle(0xf4c542)
-        gfx.fillCircle(60, 80, 60)
+        gfx.fillCircle(232, 280, 200)
         gfx.fillStyle(0xc49b10)
-        gfx.fillCircle(60, 28, 28)
+        gfx.fillCircle(232, 90, 80)
         gfx.fillStyle(0xff6b6b)
-        gfx.fillRect(40, 100, 40, 60)
-        gfx.generateTexture('player', 120, 160)
+        gfx.fillRect(180, 320, 104, 180)
+        gfx.generateTexture('player', 464, 515)
         break
 
       case 'weapon_cursor':
         gfx.fillStyle(0xf4c542)
-        gfx.fillRect(0, 6, 48, 10)
-        gfx.fillTriangle(48, 0, 48, 22, 64, 11)
-        gfx.generateTexture('weapon_cursor', 64, 22)
+        gfx.fillRect(0, 110, 200, 22)
+        gfx.fillTriangle(200, 90, 200, 152, 264, 121)
+        gfx.generateTexture('weapon_cursor', 264, 242)
         break
 
       case 'catch_box':
         gfx.lineStyle(4, 0xf4c542)
-        gfx.strokeRect(0, 0, 200, 80)
+        gfx.strokeRect(0, 0, 768, 480)
         gfx.fillStyle(0xf4c542, 0.12)
-        gfx.fillRect(0, 0, 200, 80)
-        gfx.generateTexture('catch_box', 200, 80)
+        gfx.fillRect(0, 0, 768, 480)
+        gfx.generateTexture('catch_box', 768, 480)
+        break
+
+      case 'coin_normal':
+        gfx.fillStyle(0xffd700)
+        gfx.fillCircle(32, 32, 32)
+        gfx.lineStyle(3, 0xc49b10)
+        gfx.strokeCircle(32, 32, 32)
+        gfx.generateTexture('coin_normal', 64, 64)
         break
 
       case 'bg':
@@ -128,8 +138,8 @@ export class PreloadScene extends Phaser.Scene {
   private generateStaticPlaceholders(): void {
     const gfx = this.make.graphics({ add: false })
 
+    // 'coin_normal' se carga como sprite real desde assets/coin.png
     const coinDefs: Array<[string, number, number]> = [
-      ['coin_normal',     0xffd700, 16],
       ['coin_silver',     0xc0c0c0, 16],
       ['coin_gold',       0xffaa00, 20],
       ['gem',             0x60a5fa, 16],

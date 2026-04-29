@@ -5,12 +5,15 @@ import type { Coin } from './Coin'
 
 const SAFE_MARGIN = 30
 
+const DEBUG_COLLIDERS = true
+
 export class CatchBox extends Phaser.GameObjects.Image {
   readonly catchArea: Phaser.Geom.Rectangle
 
   private cfg: BoxItem
   private dir = 1    // +1 = right, -1 = left
   private vx = 0
+  private debugGfx?: Phaser.GameObjects.Graphics
 
   constructor(scene: Phaser.Scene, config: BoxItem) {
     const x = SCENE_W / 2
@@ -26,6 +29,12 @@ export class CatchBox extends Phaser.GameObjects.Image {
       config.width,
       config.height,
     )
+
+    if (DEBUG_COLLIDERS) {
+      this.debugGfx = scene.add.graphics()
+      this.debugGfx.setDepth(this.depth + 1)
+      this.redrawDebug()
+    }
   }
 
   setConfig(config: BoxItem): void {
@@ -90,5 +99,29 @@ export class CatchBox extends Phaser.GameObjects.Image {
       this.cfg.width,
       this.cfg.height,
     )
+    this.redrawDebug()
+  }
+
+  private redrawDebug(): void {
+    if (!this.debugGfx) return
+    this.debugGfx.clear()
+    this.debugGfx.fillStyle(0xff3333, 0.3)
+    this.debugGfx.fillRect(
+      this.catchArea.x,
+      this.catchArea.y,
+      this.catchArea.width,
+      this.catchArea.height,
+    )
+    this.debugGfx.lineStyle(3, 0xff3333, 0.9)
+    this.debugGfx.strokeRect(
+      this.catchArea.x,
+      this.catchArea.y,
+      this.catchArea.width,
+      this.catchArea.height,
+    )
+  }
+
+  preDestroy(): void {
+    this.debugGfx?.destroy()
   }
 }

@@ -1,14 +1,31 @@
 import * as Phaser from 'phaser'
 
+const WEAPON_W = 264
+const WEAPON_H = 242
+
+const DEBUG_COLLIDERS = true
+
 export class WeaponCursor extends Phaser.GameObjects.Image {
+  readonly hitZone: Phaser.Geom.Rectangle
+  lastVelocity: { x: number; y: number } = { x: 0, y: 0 }
+
   private swinging = false
   private isDesktop: boolean
+  private debugGfx?: Phaser.GameObjects.Graphics
 
   constructor(scene: Phaser.Scene) {
     super(scene, 0, 0, 'weapon_cursor')
     scene.add.existing(this)
-    this.setOrigin(0, 0.5)
+    // Origen centrado para que rotación y collider queden estables sobre el puntero
+    this.setOrigin(0.5, 0.5)
     this.setDepth(20)
+
+    this.hitZone = new Phaser.Geom.Rectangle(0, 0, WEAPON_W, WEAPON_H)
+
+    if (DEBUG_COLLIDERS) {
+      this.debugGfx = scene.add.graphics()
+      this.debugGfx.setDepth(this.depth + 1)
+    }
 
     // En desktop el cursor sigue al ratón siempre; en móvil solo al tocar
     this.isDesktop = scene.sys.game.device.os.desktop
@@ -28,13 +45,15 @@ export class WeaponCursor extends Phaser.GameObjects.Image {
 
   private onMove(pointer: Phaser.Input.Pointer): void {
     this.setPosition(pointer.x, pointer.y)
+    this.lastVelocity = { x: pointer.velocity.x, y: pointer.velocity.y }
+    this.syncHitZone()
 
     if (this.isDesktop) {
       this.setVisible(true)
-      // Rotar en la dirección del movimiento del ratón
+      // Rotar en la dirección del movimiento del ratón (suavizado)
       const dx = pointer.velocity.x
       const dy = pointer.velocity.y
-      if (Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5) {
+      if (Math.abs(dx) > 1.5 || Math.abs(dy) > 1.5) {
         this.setRotation(Math.atan2(dy, dx))
       }
     } else if (pointer.isDown) {
@@ -47,6 +66,7 @@ export class WeaponCursor extends Phaser.GameObjects.Image {
   private onDown(pointer: Phaser.Input.Pointer): void {
     this.setPosition(pointer.x, pointer.y)
     this.setVisible(true)
+    this.syncHitZone()
   }
 
   private onUp(): void {
@@ -66,8 +86,39 @@ export class WeaponCursor extends Phaser.GameObjects.Image {
       duration: 90,
       ease: 'Power2',
       yoyo: true,
-      onComplete: () => { this.swinging = false },
+      onUpdate: () => this.syncHitZone(),
+      onComplete: () => {
+        this.swinging = false
+        this.syncHitZone()
+      },
     })
+  }
+
+  private syncHitZone(): void {
+    const w = WEAPON_W * Math.abs(this.scaleX)
+    const h = WEAPON_H * Math.abs(this.scaleY)
+    this.hitZone.setTo(this.x - w / 2, this.y - h / 2, w, h)
+    this.redrawDebug()
+  }
+
+  private redrawDebug(): void {
+    if (!this.debugGfx) return
+    this.debugGfx.clear()
+    if (!this.visible) return
+    this.debugGfx.fillStyle(0x00ff66, 0.3)
+    this.debugGfx.fillRect(
+      this.hitZone.x,
+      this.hitZone.y,
+      this.hitZone.width,
+      this.hitZone.height,
+    )
+    this.debugGfx.lineStyle(3, 0x00ff66, 0.9)
+    this.debugGfx.strokeRect(
+      this.hitZone.x,
+      this.hitZone.y,
+      this.hitZone.width,
+      this.hitZone.height,
+    )
   }
 
   preDestroy(): void {
@@ -75,5 +126,6 @@ export class WeaponCursor extends Phaser.GameObjects.Image {
     this.scene.input.off('pointermove', this.onMove, this)
     this.scene.input.off('pointerdown', this.onDown, this)
     this.scene.input.off('pointerup',   this.onUp,   this)
+    this.debugGfx?.destroy()
   }
 }

@@ -24,6 +24,8 @@ export const GROUND_Y = SCENE_H - 40
 
 const POOL_SIZE = 32
 
+const WEAPON_HIT_COOLDOWN_MS = 220
+
 export class GameScene extends Phaser.Scene {
   private isRunning = false
 
@@ -37,6 +39,10 @@ export class GameScene extends Phaser.Scene {
   private box!: CatchBox
   private cursor!: WeaponCursor
   private pool!: ObjectPool<Coin>
+
+  // Cursor-vs-player overlap detection
+  private wasWeaponOverPlayer = false
+  private lastWeaponHitMs = 0
 
   // Systems
   private swipe!: SwipeSystem
@@ -74,7 +80,7 @@ export class GameScene extends Phaser.Scene {
   // ── Background ────────────────────────────────────────────
 
   private buildStaticBackground(): void {
-    this.bgImage = this.add.image(SCENE_W / 2, SCENE_H / 2, "bg")
+    this.bgImage = this.add.image(SCENE_W / 2, SCENE_H / 2, "bg").setDisplaySize(SCENE_W, SCENE_H)
     this.platformImage = this.add.image(SCENE_W / 2, GROUND_Y + 20, "platform")
 
     this.readyText = this.add
@@ -163,12 +169,58 @@ export class GameScene extends Phaser.Scene {
 
   // ── Gameplay loop ─────────────────────────────────────────
 
-  update(_time: number, delta: number): void {
+  update(time: number, delta: number): void {
     // La caja se mueve siempre (visible aunque no haya partida activa)
     this.box.updateMovement(delta)
     if (!this.isRunning) return
     this.box.applyMagnet(this.pool.getActive())
     this.collision.update()
+    this.checkWeaponPlayerHit(time)
+  }
+
+  // Cuando el weapon_cursor entra en la zona del player, dispara un hit:
+  // las monedas salen y caen por gravedad. Detecta el flanco de entrada
+  // (no estaba solapando → ahora sí) con un pequeño cooldown anti-spam.
+  private checkWeaponPlayerHit(now: number): void {
+    if (!this.cursor.visible) {
+      this.wasWeaponOverPlayer = false
+      return
+    }
+
+    const overlaps = Phaser.Geom.Intersects.RectangleToRectangle(
+      this.cursor.hitZone,
+      this.player.hitZone,
+    )
+
+    if (overlaps && !this.wasWeaponOverPlayer && now - this.lastWeaponHitMs >= WEAPON_HIT_COOLDOWN_MS) {
+      this.lastWeaponHitMs = now
+      this.fireWeaponHit()
+    }
+    this.wasWeaponOverPlayer = overlaps
+  }
+
+  private fireWeaponHit(): void {
+    const v = this.cursor.lastVelocity
+    const len = Math.sqrt(v.x * v.x + v.y * v.y)
+    let dx: number
+    let dy: number
+    if (len > 0.5) {
+      dx = v.x / len
+      dy = v.y / len
+    } else {
+      // Sin velocidad clara: dirige hacia arriba para que las monedas suban antes de caer
+      dx = 0
+      dy = -1
+    }
+
+    this.events.emit('swipe:hit', {
+      direction: { x: dx, y: dy },
+      strength: 0.85,
+      isCritical: false,
+      startX: this.cursor.x,
+      startY: this.cursor.y,
+    })
+    this.cursor.playSwing()
   }
 
   // ── Lifecycle ─────────────────────────────────────────────
