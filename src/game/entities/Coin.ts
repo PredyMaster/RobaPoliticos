@@ -4,14 +4,11 @@ import { COIN_LIFETIME_MS } from "../data/coins"
 import { SHOW_COLLIDERS } from "../scenes/GameScene"
 
 const TEXTURE_MAP: Record<CoinTypeId, string> = {
-  normal_coin: "coin_normal",
-  silver_coin: "coin_silver",
-  gold_coin: "coin_gold",
-  money_bill: "money_bill",
-  gem: "gem",
-  multiplier_coin: "multiplier_coin",
-  magnet_coin: "magnet_coin",
-  bomb_coin: "bomb_coin",
+  coin_silver: 'coin_silver',
+  coin_gold:   'coin_gold',
+  bill_blue:   'bill_blue',
+  bill_green:  'bill_green',
+  bill_pink:   'bill_pink',
 }
 
 export class Coin extends Phaser.Physics.Arcade.Sprite {
@@ -20,7 +17,7 @@ export class Coin extends Phaser.Physics.Arcade.Sprite {
   private debugGfx?: Phaser.GameObjects.Graphics
 
   constructor(scene: Phaser.Scene) {
-    super(scene, 0, 0, "coin_normal")
+    super(scene, 0, 0, "coin_silver")
     scene.add.existing(this)
     scene.physics.add.existing(this)
     this.setActive(false).setVisible(false)

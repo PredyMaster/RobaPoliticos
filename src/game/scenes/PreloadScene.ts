@@ -17,7 +17,11 @@ const REAL_SPRITES: Record<string, string> = {
   player_hard_slap:  'assets/player_hard_slap.png',
   weapon_cursor:     'assets/weapon_cursor.png',
   catch_box:         'assets/catch_box.png',
-  coin_normal:       'assets/coin.png',
+  coin_silver:       'assets/coins/coin_silver.png',
+  coin_gold:         'assets/coins/coin_gold.png',
+  bill_blue:         'assets/coins/bill_blue.png',
+  bill_green:        'assets/coins/bill_green.png',
+  bill_pink:         'assets/coins/bill_pink.png',
   bg:                'assets/bg.png',
 }
 
@@ -142,12 +146,44 @@ export class PreloadScene extends Phaser.Scene {
         gfx.generateTexture('catch_box', 768, 480)
         break
 
-      case 'coin_normal':
-        gfx.fillStyle(0xffd700)
-        gfx.fillCircle(32, 32, 32)
-        gfx.lineStyle(3, 0xc49b10)
-        gfx.strokeCircle(32, 32, 32)
-        gfx.generateTexture('coin_normal', 64, 64)
+      case 'coin_silver':
+        gfx.fillStyle(0xc0c0c0)
+        gfx.fillCircle(20, 20, 20)
+        gfx.lineStyle(2, 0x909090)
+        gfx.strokeCircle(20, 20, 20)
+        gfx.generateTexture('coin_silver', 40, 40)
+        break
+
+      case 'coin_gold':
+        gfx.fillStyle(0xffcc00)
+        gfx.fillCircle(20, 20, 20)
+        gfx.lineStyle(2, 0xc49b10)
+        gfx.strokeCircle(20, 20, 20)
+        gfx.generateTexture('coin_gold', 40, 40)
+        break
+
+      case 'bill_blue':
+        gfx.fillStyle(0x3b82f6)
+        gfx.fillRect(0, 0, 56, 28)
+        gfx.lineStyle(2, 0x1d4ed8)
+        gfx.strokeRect(2, 2, 52, 24)
+        gfx.generateTexture('bill_blue', 56, 28)
+        break
+
+      case 'bill_green':
+        gfx.fillStyle(0x22c55e)
+        gfx.fillRect(0, 0, 56, 28)
+        gfx.lineStyle(2, 0x15803d)
+        gfx.strokeRect(2, 2, 52, 24)
+        gfx.generateTexture('bill_green', 56, 28)
+        break
+
+      case 'bill_pink':
+        gfx.fillStyle(0xec4899)
+        gfx.fillRect(0, 0, 56, 28)
+        gfx.lineStyle(2, 0x9d174d)
+        gfx.strokeRect(2, 2, 52, 24)
+        gfx.generateTexture('bill_pink', 56, 28)
         break
 
       case 'bg':
@@ -160,34 +196,10 @@ export class PreloadScene extends Phaser.Scene {
     gfx.destroy()
   }
 
-  // Placeholders que siempre se generan (monedas, plataforma — no tienen sprite real)
+  // Placeholders que siempre se generan (plataforma — no tiene sprite real)
   private generateStaticPlaceholders(): void {
     const gfx = this.make.graphics({ add: false })
 
-    // 'coin_normal' se carga como sprite real desde assets/coin.png
-    const coinDefs: Array<[string, number, number]> = [
-      ['coin_silver',     0xc0c0c0, 16],
-      ['coin_gold',       0xffaa00, 20],
-      ['gem',             0x60a5fa, 16],
-      ['multiplier_coin', 0xff6b6b, 16],
-      ['magnet_coin',     0xa78bfa, 16],
-      ['bomb_coin',       0x374151, 16],
-    ]
-    for (const [key, color, r] of coinDefs) {
-      gfx.clear()
-      gfx.fillStyle(color)
-      gfx.fillCircle(r, r, r)
-      gfx.generateTexture(key, r * 2, r * 2)
-    }
-
-    gfx.clear()
-    gfx.fillStyle(0x4ade80)
-    gfx.fillRect(0, 0, 56, 28)
-    gfx.lineStyle(2, 0x166534)
-    gfx.strokeRect(2, 2, 52, 24)
-    gfx.generateTexture('money_bill', 56, 28)
-
-    gfx.clear()
     gfx.fillStyle(0x2a2a4e)
     gfx.fillRect(0, 0, W, 40)
     gfx.lineStyle(2, 0x4a4a8e)

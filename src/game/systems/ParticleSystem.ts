@@ -4,15 +4,15 @@ import { SCENE_W, SCENE_H } from '../scenes/GameScene'
 
 const QUALITY_COUNT: Record<GraphicsQuality, number> = { low: 4, medium: 8, high: 16 }
 
-const COIN_TEXTURE: Partial<Record<CoinTypeId, string>> = {
-  normal_coin: 'coin_normal',
-  silver_coin: 'coin_silver',
-  gold_coin:   'coin_gold',
-  money_bill:  'money_bill',
-  gem:         'gem',
+const COIN_TEXTURE: Record<CoinTypeId, string> = {
+  coin_silver: 'coin_silver',
+  coin_gold:   'coin_gold',
+  bill_blue:   'bill_blue',
+  bill_green:  'bill_green',
+  bill_pink:   'bill_pink',
 }
 
-type PlayerHitEvent  = { isCritical: boolean }
+type PlayerHitEvent  = { isCritical: boolean; x: number; y: number }
 type CoinCaughtEvent = { x: number; y: number; coinType: CoinTypeId }
 
 export class ParticleSystem {
@@ -35,7 +35,7 @@ export class ParticleSystem {
   }
 
   private createEmitters(): void {
-    this.hitEmitter = this.scene.add.particles(0, 0, 'coin_normal', {
+    this.hitEmitter = this.scene.add.particles(0, 0, 'coin_silver', {
       speed:    { min: 80, max: 240 },
       angle:    { min: 0, max: 360 },
       scale:    { start: 0.55, end: 0 },
@@ -44,7 +44,7 @@ export class ParticleSystem {
       emitting: false,
     })
 
-    this.collectEmitter = this.scene.add.particles(0, 0, 'coin_normal', {
+    this.collectEmitter = this.scene.add.particles(0, 0, 'coin_silver', {
       speed:    { min: 40, max: 110 },
       angle:    { min: 210, max: 330 },
       scale:    { start: 0.4, end: 0 },
@@ -63,19 +63,13 @@ export class ParticleSystem {
 
   private onPlayerHit(e: PlayerHitEvent): void {
     const count = e.isCritical ? this.maxCount * 2 : this.maxCount
-    const { x, y } = this.hitEmitter
-    this.hitEmitter.explode(count, x, y)
+    this.hitEmitter.explode(count, e.x, e.y)
   }
 
   private onCoinCaught(e: CoinCaughtEvent): void {
-    const texture = COIN_TEXTURE[e.coinType] ?? 'coin_normal'
+    const texture = COIN_TEXTURE[e.coinType]
     this.collectEmitter.setTexture(texture)
     this.collectEmitter.explode(4, e.x, e.y)
-  }
-
-  /** Call from GameScene.create after player position is known */
-  setPlayerPosition(x: number, y: number): void {
-    this.hitEmitter.setPosition(x, y)
   }
 
   private onFeverStart(): void {

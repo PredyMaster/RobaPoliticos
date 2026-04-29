@@ -44,10 +44,12 @@ export class PlayerCharacter extends Phaser.GameObjects.Sprite {
         : "player_soft_slap"
 
     this.setTexture(textureKey)
+    this.setFlipX(e.direction.x < 0)
 
     this.slapTimer?.remove()
     this.slapTimer = this.scene.time.delayedCall(SLAP_DURATION_MS, () => {
       this.setTexture("player")
+      this.setFlipX(false)
       this.slapTimer = undefined
     })
 
@@ -78,7 +80,7 @@ export class PlayerCharacter extends Phaser.GameObjects.Sprite {
       },
     })
 
-    this.scene.events.emit("player:hit", { direction, isCritical })
+    this.scene.events.emit("player:hit", { direction, isCritical, x: this.x, y: this.y })
   }
 
   private syncHitZone(): void {

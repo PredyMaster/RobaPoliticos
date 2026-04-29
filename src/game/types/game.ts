@@ -35,21 +35,18 @@ export type BoxItem = {
 // ── Monedas ─────────────────────────────────────────────────
 
 export type CoinTypeId =
-  | 'normal_coin'
-  | 'silver_coin'
-  | 'gold_coin'
-  | 'money_bill'
-  | 'gem'
-  | 'multiplier_coin'
-  | 'magnet_coin'
-  | 'bomb_coin'
+  | 'coin_silver'
+  | 'coin_gold'
+  | 'bill_blue'
+  | 'bill_green'
+  | 'bill_pink'
 
 export type CoinDefinition = {
   id: CoinTypeId
   value: number
   probability: number   // peso relativo (se normaliza en CoinSpawnSystem)
   visualAsset: string
-  isSpecial: boolean    // si true tiene efecto especial además del valor
+  rarityWeight: number  // 0 = prob. fija, >0 = amplificada por rarityBonus del golpe
 }
 
 export type CoinState = {

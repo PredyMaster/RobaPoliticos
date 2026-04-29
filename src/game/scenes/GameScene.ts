@@ -127,7 +127,7 @@ export class GameScene extends Phaser.Scene {
     )
     this.haptics = new HapticsSystem(this, vibration)
 
-    this.particles.setPlayerPosition(this.player.x, this.player.y)
+
   }
 
   // ── EventBus bridge ───────────────────────────────────────

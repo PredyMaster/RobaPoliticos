@@ -1,8 +1,12 @@
-import * as Phaser from 'phaser'
-import { SHOW_COLLIDERS } from '../scenes/GameScene'
+import * as Phaser from "phaser"
+import { SHOW_COLLIDERS } from "../scenes/GameScene"
 
 const WEAPON_W = 264
 const WEAPON_H = 242
+
+const VELOCITY_THRESHOLD = 50 // px/frame mínimos para actualizar ángulo
+const VELOCITY_SMOOTH = 0.07 // factor EMA sobre la velocidad raw (0=congelar, 1=sin suavizar)
+const ROTATION_LERP = 0.2 // resistencia rotacional por frame (0=rígido, 1=instantáneo)
 
 export class WeaponCursor extends Phaser.GameObjects.Image {
   readonly hitZone: Phaser.Geom.Rectangle
@@ -12,8 +16,11 @@ export class WeaponCursor extends Phaser.GameObjects.Image {
   private isDesktop: boolean
   private debugGfx?: Phaser.GameObjects.Graphics
 
+  private smoothVel: { x: number; y: number } = { x: 0, y: 0 }
+  private targetRotation: number = 0
+
   constructor(scene: Phaser.Scene) {
-    super(scene, 0, 0, 'weapon_cursor')
+    super(scene, 0, 0, "weapon_cursor")
     scene.add.existing(this)
     // Origen centrado para que rotación y collider queden estables sobre el puntero
     this.setOrigin(0.5, 0.5)
@@ -31,39 +38,61 @@ export class WeaponCursor extends Phaser.GameObjects.Image {
 
     if (this.isDesktop) {
       // Ocultar cursor nativo del navegador sobre el canvas
-      scene.input.setDefaultCursor('none')
+      scene.input.setDefaultCursor("none")
       this.setVisible(true)
     } else {
       this.setVisible(false)
     }
 
-    scene.input.on('pointermove', this.onMove, this)
-    scene.input.on('pointerdown', this.onDown, this)
-    scene.input.on('pointerup',   this.onUp,   this)
+    scene.input.on("pointermove", this.onMove, this)
+    scene.input.on("pointerdown", this.onDown, this)
+    scene.input.on("pointerup", this.onUp, this)
+    scene.events.on("update", this.onUpdate, this)
+  }
+
+  private updateFlip(x: number): void {
+    this.setFlipX(x < this.scene.scale.width / 2)
   }
 
   private onMove(pointer: Phaser.Input.Pointer): void {
     this.setPosition(pointer.x, pointer.y)
+    this.updateFlip(pointer.x)
     this.lastVelocity = { x: pointer.velocity.x, y: pointer.velocity.y }
     this.syncHitZone()
 
     if (this.isDesktop) {
       this.setVisible(true)
-      // Rotar en la dirección del movimiento del ratón (suavizado)
-      const dx = pointer.velocity.x
-      const dy = pointer.velocity.y
-      if (Math.abs(dx) > 1.5 || Math.abs(dy) > 1.5) {
-        this.setRotation(Math.atan2(dy, dx))
+      // EMA sobre la velocidad raw para filtrar micro-movimientos bruscos
+      this.smoothVel.x =
+        this.smoothVel.x * (1 - VELOCITY_SMOOTH) +
+        pointer.velocity.x * VELOCITY_SMOOTH
+      this.smoothVel.y =
+        this.smoothVel.y * (1 - VELOCITY_SMOOTH) +
+        pointer.velocity.y * VELOCITY_SMOOTH
+      const mag = Math.sqrt(this.smoothVel.x ** 2 + this.smoothVel.y ** 2)
+      if (mag > VELOCITY_THRESHOLD) {
+        this.targetRotation = Math.atan2(this.smoothVel.y, this.smoothVel.x)
       }
     } else if (pointer.isDown) {
       const dx = pointer.x - pointer.downX
       const dy = pointer.y - pointer.downY
-      if (dx !== 0 || dy !== 0) this.setRotation(Math.atan2(dy, dx))
+      if (dx !== 0 || dy !== 0) this.targetRotation = Math.atan2(dy, dx)
+    }
+  }
+
+  private onUpdate(): void {
+    // Interpolación angular por el camino más corto hacia targetRotation
+    let diff = this.targetRotation - this.rotation
+    if (diff > Math.PI) diff -= Math.PI * 2
+    if (diff < -Math.PI) diff += Math.PI * 2
+    if (Math.abs(diff) > 0.001) {
+      this.setRotation(this.rotation + diff * ROTATION_LERP)
     }
   }
 
   private onDown(pointer: Phaser.Input.Pointer): void {
     this.setPosition(pointer.x, pointer.y)
+    this.updateFlip(pointer.x)
     this.setVisible(true)
     this.syncHitZone()
   }
@@ -83,7 +112,7 @@ export class WeaponCursor extends Phaser.GameObjects.Image {
       scaleX: 1.4,
       scaleY: 1.4,
       duration: 90,
-      ease: 'Power2',
+      ease: "Power2",
       yoyo: true,
       onUpdate: () => this.syncHitZone(),
       onComplete: () => {
@@ -121,10 +150,11 @@ export class WeaponCursor extends Phaser.GameObjects.Image {
   }
 
   preDestroy(): void {
-    this.scene.input.setDefaultCursor('default')
-    this.scene.input.off('pointermove', this.onMove, this)
-    this.scene.input.off('pointerdown', this.onDown, this)
-    this.scene.input.off('pointerup',   this.onUp,   this)
+    this.scene.input.setDefaultCursor("default")
+    this.scene.input.off("pointermove", this.onMove, this)
+    this.scene.input.off("pointerdown", this.onDown, this)
+    this.scene.input.off("pointerup", this.onUp, this)
+    this.scene.events.off("update", this.onUpdate, this)
     this.debugGfx?.destroy()
   }
 }

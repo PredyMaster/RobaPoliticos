@@ -2,7 +2,7 @@ import * as Phaser from 'phaser'
 import type { CoinTypeId, ComboState } from '../types/game'
 import type { SwipeHitEvent } from './SwipeSystem'
 
-const RARE_COIN  = new Set<CoinTypeId>(['gold_coin', 'gem', 'money_bill'])
+const RARE_COIN = new Set<CoinTypeId>(['coin_gold', 'bill_blue', 'bill_green', 'bill_pink'])
 const COMBO_BEATS = new Set([5, 10, 20, 50])
 
 type CoinCaughtEvent = { coinType: CoinTypeId }

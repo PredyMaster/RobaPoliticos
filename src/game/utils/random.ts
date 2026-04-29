@@ -30,16 +30,14 @@ export function weightedRandom<T extends { probability: number }>(items: T[]): T
   return items[items.length - 1]
 }
 
-// Elige un tipo de moneda considerando rarityBonus del arma
+// Elige un tipo de moneda; rarityBonus (0–1) amplifica monedas con rarityWeight > 0
 export function pickCoinType(
   definitions: CoinDefinition[],
   rarityBonus: number,
 ): CoinTypeId {
   const adjusted = definitions.map((def) => ({
     ...def,
-    probability: def.isSpecial
-      ? def.probability * (1 + rarityBonus * 2)
-      : def.probability,
+    probability: def.probability * (1 + rarityBonus * def.rarityWeight),
   }))
   return weightedRandom(adjusted).id
 }

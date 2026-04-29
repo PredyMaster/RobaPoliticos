@@ -60,17 +60,33 @@ export class CoinSpawnSystem {
     const sc    = Math.pow(e.strength, 1.5)
     const force = w.force * (0.12 + sc * 1.88)
 
+    // rarityBonus: escala con la fuerza del golpe y el combo actual
+    // Alcanza 1.0 sólo con combo >= 20 (fiebre) + golpe a máxima velocidad
+    const comboFactor = Math.min(this.combo.count / 20, 1)
+    const rarityBonus = e.strength * comboFactor * (0.5 + w.rarityBonus * 0.5)
+
     for (let i = 0; i < count; i++) {
-      const type  = pickCoinType(COIN_DEFINITIONS, w.rarityBonus)
+      const type  = pickCoinType(COIN_DEFINITIONS, rarityBonus)
       const def   = COIN_MAP.get(type)
       const value = def?.value ?? 1
       const angle = spreadAngle(baseAngle, w.spread)
       const vx    = Math.cos(angle) * force
       const vy    = Math.sin(angle) * force
 
-      const scale = 0.7 + Math.random() * 0.5   // 0.70 – 1.20
+      // Offset aleatorio en un radio de 50px para que no salgan todas del mismo punto
+      const spawnAngle = Math.random() * Math.PI * 2
+      const spawnDist  = Math.random() * 50
+      const spawnX = this.player.x + Math.cos(spawnAngle) * spawnDist
+      const spawnY = this.player.y + Math.sin(spawnAngle) * spawnDist
+
+      // Billetes más grandes que monedas
+      const isBill = type === 'bill_blue' || type === 'bill_green' || type === 'bill_pink'
+      const scale  = isBill
+        ? 1.2 + Math.random() * 0.4   // 1.20 – 1.60
+        : 0.7 + Math.random() * 0.4   // 0.70 – 1.10
+
       const coin = this.pool.acquire()
-      coin.reset(this.player.x, this.player.y, vx, vy, type, value, 0, scale)
+      coin.reset(spawnX, spawnY, vx, vy, type, value, 0, scale)
     }
   }
 
