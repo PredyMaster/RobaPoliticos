@@ -31,7 +31,6 @@ export class GameScene extends Phaser.Scene {
 
   // Background
   private bgImage!: Phaser.GameObjects.Image
-  private platformImage!: Phaser.GameObjects.Image
   private readyText!: Phaser.GameObjects.Text
 
   // Entities
@@ -80,16 +79,9 @@ export class GameScene extends Phaser.Scene {
   // ── Background ────────────────────────────────────────────
 
   private buildStaticBackground(): void {
-    this.bgImage = this.add.image(SCENE_W / 2, SCENE_H / 2, "bg").setDisplaySize(SCENE_W, SCENE_H)
-    this.platformImage = this.add.image(SCENE_W / 2, GROUND_Y + 20, "platform")
-
-    this.readyText = this.add
-      .text(SCENE_W / 2, SCENE_H / 2 - 80, "", {
-        fontSize: "48px",
-        color: "rgba(255,255,255,0.2)",
-        fontStyle: "bold",
-      })
-      .setOrigin(0.5)
+    this.bgImage = this.add
+      .image(SCENE_W / 2, SCENE_H / 2, "bg")
+      .setDisplaySize(SCENE_W, SCENE_H)
   }
 
   // ── Entities ──────────────────────────────────────────────
@@ -147,7 +139,6 @@ export class GameScene extends Phaser.Scene {
   private onRunStarted(): void {
     if (this.isRunning) return
     this.isRunning = true
-    this.readyText.setVisible(false)
     this.economy.startTracking()
   }
 
@@ -192,7 +183,11 @@ export class GameScene extends Phaser.Scene {
       this.player.hitZone,
     )
 
-    if (overlaps && !this.wasWeaponOverPlayer && now - this.lastWeaponHitMs >= WEAPON_HIT_COOLDOWN_MS) {
+    if (
+      overlaps &&
+      !this.wasWeaponOverPlayer &&
+      now - this.lastWeaponHitMs >= WEAPON_HIT_COOLDOWN_MS
+    ) {
       this.lastWeaponHitMs = now
       this.fireWeaponHit()
     }
@@ -213,7 +208,7 @@ export class GameScene extends Phaser.Scene {
       dy = -1
     }
 
-    this.events.emit('swipe:hit', {
+    this.events.emit("swipe:hit", {
       direction: { x: dx, y: dy },
       strength: 0.85,
       isCritical: false,
