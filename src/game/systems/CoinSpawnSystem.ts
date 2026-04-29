@@ -44,9 +44,21 @@ export class CoinSpawnSystem {
     if (e.isCritical)           count = Math.ceil(count * w.criticalMultiplier * 0.5)
     if (this.combo.count >= 20) count = Math.ceil(count * 1.5)  // fever bonus
 
-    const baseAngle = Math.atan2(e.direction.y, e.direction.x)
-    // Velocidad reducida: queremos que la gravedad (1000 px/s²) domine el arco
-    const force     = w.force * 0.35
+    // Blend hit direction with downward based on strength:
+    // weak hit (strength≈0) → coins fall below; strong hit (strength≈1) → fly in hit direction
+    const t = Math.pow(e.strength, 0.7)
+    const blendedX = e.direction.x * t
+    const blendedY = e.direction.y * t + (1 - t)  // bias toward +y (down in screen space)
+    const len = Math.sqrt(blendedX * blendedX + blendedY * blendedY)
+    const finalDirX = len > 0 ? blendedX / len : 0
+    const finalDirY = len > 0 ? blendedY / len : 1
+
+    const baseAngle = Math.atan2(finalDirY, finalDirX)
+
+    // Curva cuadrática: golpe suave → poca fuerza; golpe fuerte → hasta 2× weapon.force
+    // La gravedad mundial (1000 px/s²) actúa siempre para que el arco sea pronunciado
+    const sc    = Math.pow(e.strength, 1.5)
+    const force = w.force * (0.12 + sc * 1.88)
 
     for (let i = 0; i < count; i++) {
       const type  = pickCoinType(COIN_DEFINITIONS, w.rarityBonus)
@@ -54,10 +66,11 @@ export class CoinSpawnSystem {
       const value = def?.value ?? 1
       const angle = spreadAngle(baseAngle, w.spread)
       const vx    = Math.cos(angle) * force
-      const vy    = Math.sin(angle) * force   // sin sesgo: la gravedad las hala abajo
+      const vy    = Math.sin(angle) * force
 
+      const scale = 0.7 + Math.random() * 0.5   // 0.70 – 1.20
       const coin = this.pool.acquire()
-      coin.reset(this.player.x, this.player.y, vx, vy, type, value)
+      coin.reset(this.player.x, this.player.y, vx, vy, type, value, 0, scale)
     }
   }
 

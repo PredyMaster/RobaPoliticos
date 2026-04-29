@@ -1,11 +1,9 @@
 import * as Phaser from 'phaser'
 import type { BoxItem } from '../types/game'
-import { SCENE_W, GROUND_Y } from '../scenes/GameScene'
+import { SCENE_W, GROUND_Y, SHOW_COLLIDERS } from '../scenes/GameScene'
 import type { Coin } from './Coin'
 
 const SAFE_MARGIN = 30
-
-const DEBUG_COLLIDERS = true
 
 export class CatchBox extends Phaser.GameObjects.Image {
   readonly catchArea: Phaser.Geom.Rectangle
@@ -30,7 +28,7 @@ export class CatchBox extends Phaser.GameObjects.Image {
       config.height,
     )
 
-    if (DEBUG_COLLIDERS) {
+    if (SHOW_COLLIDERS) {
       this.debugGfx = scene.add.graphics()
       this.debugGfx.setDepth(this.depth + 1)
       this.redrawDebug()

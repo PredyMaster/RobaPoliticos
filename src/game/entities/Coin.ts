@@ -1,19 +1,18 @@
-import * as Phaser from 'phaser'
-import type { CoinTypeId, CoinState } from '../types/game'
-import { COIN_LIFETIME_MS } from '../data/coins'
+import * as Phaser from "phaser"
+import type { CoinTypeId, CoinState } from "../types/game"
+import { COIN_LIFETIME_MS } from "../data/coins"
+import { SHOW_COLLIDERS } from "../scenes/GameScene"
 
 const TEXTURE_MAP: Record<CoinTypeId, string> = {
-  normal_coin:     'coin_normal',
-  silver_coin:     'coin_silver',
-  gold_coin:       'coin_gold',
-  money_bill:      'money_bill',
-  gem:             'gem',
-  multiplier_coin: 'multiplier_coin',
-  magnet_coin:     'magnet_coin',
-  bomb_coin:       'bomb_coin',
+  normal_coin: "coin_normal",
+  silver_coin: "coin_silver",
+  gold_coin: "coin_gold",
+  money_bill: "money_bill",
+  gem: "gem",
+  multiplier_coin: "multiplier_coin",
+  magnet_coin: "magnet_coin",
+  bomb_coin: "bomb_coin",
 }
-
-const DEBUG_COLLIDERS = true
 
 export class Coin extends Phaser.Physics.Arcade.Sprite {
   coinState!: CoinState
@@ -21,7 +20,7 @@ export class Coin extends Phaser.Physics.Arcade.Sprite {
   private debugGfx?: Phaser.GameObjects.Graphics
 
   constructor(scene: Phaser.Scene) {
-    super(scene, 0, 0, 'coin_normal')
+    super(scene, 0, 0, "coin_normal")
     scene.add.existing(this)
     scene.physics.add.existing(this)
     this.setActive(false).setVisible(false)
@@ -32,21 +31,32 @@ export class Coin extends Phaser.Physics.Arcade.Sprite {
     body.setCollideWorldBounds(false)
     body.setAllowGravity(true)
 
-    if (DEBUG_COLLIDERS) {
+    if (SHOW_COLLIDERS) {
       this.debugGfx = scene.add.graphics()
       this.debugGfx.setDepth(this.depth + 1)
       scene.events.on(Phaser.Scenes.Events.POST_UPDATE, this.redrawDebug, this)
     }
   }
 
-  reset(x: number, y: number, vx: number, vy: number, type: CoinTypeId, value: number): void {
+  reset(
+    x: number,
+    y: number,
+    vx: number,
+    vy: number,
+    type: CoinTypeId,
+    value: number,
+    gravityYOffset = 0,
+    scale = 1,
+  ): void {
     this.setTexture(TEXTURE_MAP[type])
+    this.setScale(scale) // antes de body.reset() para que updateBounds() use la escala correcta
     this.setActive(true).setVisible(true)
 
     const body = this.body as Phaser.Physics.Arcade.Body
-    body.reset(x, y)              // reposiciona y para velocidad
-    body.setEnable(true)          // Phaser 4: reset() no re-habilita el body, hay que hacerlo explícito
+    body.reset(x, y) // llama updateBounds() → body.width = frameW * scale ✓
+    body.setEnable(true) // Phaser 4: reset() no re-habilita el body, hay que hacerlo explícito
     body.setAllowGravity(true)
+    body.setGravityY(gravityYOffset) // local: suma a la gravedad mundial (1000). Negativo = menos gravedad neta
     body.setVelocity(vx, vy)
 
     this.coinState = {
@@ -60,8 +70,10 @@ export class Coin extends Phaser.Physics.Arcade.Sprite {
 
   despawn(): void {
     this.setActive(false).setVisible(false)
+    this.setScale(1) // reset para reutilización del pool
     const body = this.body as Phaser.Physics.Arcade.Body
     body.setVelocity(0, 0)
+    body.setGravityY(0) // reset para reutilización del pool
     body.setEnable(false)
     if (this.coinState) this.coinState.active = false
     this.debugGfx?.clear()
@@ -81,7 +93,11 @@ export class Coin extends Phaser.Physics.Arcade.Sprite {
   }
 
   preDestroy(): void {
-    this.scene?.events.off(Phaser.Scenes.Events.POST_UPDATE, this.redrawDebug, this)
+    this.scene?.events.off(
+      Phaser.Scenes.Events.POST_UPDATE,
+      this.redrawDebug,
+      this,
+    )
     this.debugGfx?.destroy()
   }
 }

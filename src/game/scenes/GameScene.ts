@@ -22,6 +22,8 @@ export const SCENE_W = 1920
 export const SCENE_H = 1080
 export const GROUND_Y = SCENE_H - 40
 
+export const SHOW_COLLIDERS = false
+
 const POOL_SIZE = 32
 
 const WEAPON_HIT_COOLDOWN_MS = 220
@@ -196,21 +198,24 @@ export class GameScene extends Phaser.Scene {
 
   private fireWeaponHit(): void {
     const v = this.cursor.lastVelocity
-    const len = Math.sqrt(v.x * v.x + v.y * v.y)
+    const speed = Math.sqrt(v.x * v.x + v.y * v.y)
     let dx: number
     let dy: number
-    if (len > 0.5) {
-      dx = v.x / len
-      dy = v.y / len
+    if (speed > 0.5) {
+      dx = v.x / speed
+      dy = v.y / speed
     } else {
       // Sin velocidad del cursor: abanico horizontal para que la gravedad las hale directo
       dx = (Math.random() < 0.5 ? -1 : 1) * Math.random()
       dy = 0.3
     }
 
+    // pointer.velocity ≈ px/frame a 60 fps; un swipe rápido da ~50 px/frame
+    const strength = Math.max(0.2, Math.min(speed / 50, 1.0))
+
     this.events.emit("swipe:hit", {
       direction: { x: dx, y: dy },
-      strength: 0.85,
+      strength,
       isCritical: false,
       startX: this.cursor.x,
       startY: this.cursor.y,

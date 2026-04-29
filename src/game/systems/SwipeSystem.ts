@@ -38,10 +38,6 @@ export class SwipeSystem {
   }
 
   private onDown(pointer: Phaser.Input.Pointer): void {
-    if (!Phaser.Geom.Rectangle.ContainsPoint(
-      this.player.hitZone,
-      new Phaser.Geom.Point(pointer.x, pointer.y),
-    )) return
     this.tracking = true
     this.downX    = pointer.x
     this.downY    = pointer.y
@@ -51,6 +47,11 @@ export class SwipeSystem {
   private onUp(pointer: Phaser.Input.Pointer): void {
     if (!this.tracking) return
     this.tracking = false
+
+    if (!Phaser.Geom.Rectangle.ContainsPoint(
+      this.player.hitZone,
+      new Phaser.Geom.Point(pointer.x, pointer.y),
+    )) return
 
     const dx       = pointer.x - this.downX
     const dy       = pointer.y - this.downY

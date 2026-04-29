@@ -1,9 +1,8 @@
 import * as Phaser from 'phaser'
+import { SHOW_COLLIDERS } from '../scenes/GameScene'
 
 const WEAPON_W = 264
 const WEAPON_H = 242
-
-const DEBUG_COLLIDERS = true
 
 export class WeaponCursor extends Phaser.GameObjects.Image {
   readonly hitZone: Phaser.Geom.Rectangle
@@ -22,7 +21,7 @@ export class WeaponCursor extends Phaser.GameObjects.Image {
 
     this.hitZone = new Phaser.Geom.Rectangle(0, 0, WEAPON_W, WEAPON_H)
 
-    if (DEBUG_COLLIDERS) {
+    if (SHOW_COLLIDERS) {
       this.debugGfx = scene.add.graphics()
       this.debugGfx.setDepth(this.depth + 1)
     }

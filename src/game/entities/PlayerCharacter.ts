@@ -1,16 +1,19 @@
 import * as Phaser from "phaser"
-import { SCENE_W, SCENE_H } from "../scenes/GameScene"
+import { SCENE_W, SCENE_H, SHOW_COLLIDERS } from "../scenes/GameScene"
+import type { SwipeHitEvent } from "../systems/SwipeSystem"
 
 const PLAYER_W = 464
 const PLAYER_H = 515
 
-const DEBUG_COLLIDERS = true
+const SLAP_DURATION_MS = 250
+const HARD_SLAP_THRESHOLD = 0.65
 
 export class PlayerCharacter extends Phaser.GameObjects.Sprite {
   readonly hitZone: Phaser.Geom.Rectangle
 
   private debugGfx?: Phaser.GameObjects.Graphics
   private recovering = false
+  private slapTimer?: Phaser.Time.TimerEvent
 
   constructor(scene: Phaser.Scene) {
     const x = SCENE_W / 2
@@ -25,20 +28,39 @@ export class PlayerCharacter extends Phaser.GameObjects.Sprite {
       PLAYER_H,
     )
 
-    if (DEBUG_COLLIDERS) {
+    if (SHOW_COLLIDERS) {
       this.debugGfx = scene.add.graphics()
       this.debugGfx.setDepth(this.depth + 1)
       this.redrawDebug()
     }
+
+    scene.events.on("swipe:hit", this.onSwipeHit, this)
+  }
+
+  private onSwipeHit(e: SwipeHitEvent): void {
+    const textureKey =
+      e.strength >= HARD_SLAP_THRESHOLD
+        ? "player_hard_slap"
+        : "player_soft_slap"
+
+    this.setTexture(textureKey)
+
+    this.slapTimer?.remove()
+    this.slapTimer = this.scene.time.delayedCall(SLAP_DURATION_MS, () => {
+      this.setTexture("player")
+      this.slapTimer = undefined
+    })
+
+    this.receiveHit(e.direction, e.isCritical)
   }
 
   receiveHit(direction: { x: number; y: number }, isCritical: boolean): void {
     if (this.recovering) return
     this.recovering = true
 
-    const knockbackX = -direction.x * (isCritical ? 30 : 16)
-    const targetScaleX = isCritical ? 1.45 : 1.2
-    const targetScaleY = isCritical ? 0.65 : 0.85
+    const knockbackX = -direction.x * (isCritical ? 20 : 8)
+    const targetScaleX = 1
+    const targetScaleY = 1
 
     this.scene.tweens.add({
       targets: this,
@@ -85,6 +107,8 @@ export class PlayerCharacter extends Phaser.GameObjects.Sprite {
   }
 
   preDestroy(): void {
+    this.scene.events.off("swipe:hit", this.onSwipeHit, this)
+    this.slapTimer?.remove()
     this.debugGfx?.destroy()
   }
 }

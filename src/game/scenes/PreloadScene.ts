@@ -12,11 +12,13 @@ const H = 1080
 //   coin.png          ―         (moneda que sale al golpear al player)
 //   bg.png            1920×1080 (fondo de escena, opcional)
 const REAL_SPRITES: Record<string, string> = {
-  player:         'assets/player.png',
-  weapon_cursor:  'assets/weapon_cursor.png',
-  catch_box:      'assets/catch_box.png',
-  coin_normal:    'assets/coin.png',
-  bg:             'assets/bg.png',
+  player:            'assets/player.png',
+  player_soft_slap:  'assets/player_soft_slap.png',
+  player_hard_slap:  'assets/player_hard_slap.png',
+  weapon_cursor:     'assets/weapon_cursor.png',
+  catch_box:         'assets/catch_box.png',
+  coin_normal:       'assets/coin.png',
+  bg:                'assets/bg.png',
 }
 
 export class PreloadScene extends Phaser.Scene {
@@ -99,6 +101,30 @@ export class PreloadScene extends Phaser.Scene {
         gfx.fillStyle(0xff6b6b)
         gfx.fillRect(180, 320, 104, 180)
         gfx.generateTexture('player', 464, 515)
+        break
+
+      case 'player_soft_slap':
+        gfx.fillStyle(0xf4c542)
+        gfx.fillCircle(232, 280, 200)
+        gfx.fillStyle(0xc49b10)
+        gfx.fillCircle(232, 90, 80)
+        gfx.fillStyle(0xff6b6b)
+        gfx.fillRect(180, 320, 104, 180)
+        gfx.fillStyle(0xff9900, 0.6)
+        gfx.fillCircle(320, 200, 40)
+        gfx.generateTexture('player_soft_slap', 464, 515)
+        break
+
+      case 'player_hard_slap':
+        gfx.fillStyle(0xf4c542)
+        gfx.fillCircle(232, 280, 200)
+        gfx.fillStyle(0xc49b10)
+        gfx.fillCircle(232, 90, 80)
+        gfx.fillStyle(0xff6b6b)
+        gfx.fillRect(180, 320, 104, 180)
+        gfx.fillStyle(0xff0000, 0.8)
+        gfx.fillCircle(320, 200, 60)
+        gfx.generateTexture('player_hard_slap', 464, 515)
         break
 
       case 'weapon_cursor':
