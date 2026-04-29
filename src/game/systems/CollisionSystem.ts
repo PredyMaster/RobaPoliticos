@@ -17,7 +17,7 @@ export class CollisionSystem {
     this.box   = box
   }
 
-  update(): void {
+  update(catchEnabled: boolean = true): void {
     const now    = Date.now()
     const active = this.pool.getActive()   // snapshot — safe to release during iteration
 
@@ -31,12 +31,12 @@ export class CollisionSystem {
         continue
       }
 
-      if (coin.y > SCENE_H + 80 || coin.x < -120 || coin.x > SCENE_W + 120) {
+      if (coin.y > SCENE_H + 80 || coin.y < -80 || coin.x < -120 || coin.x > SCENE_W + 120) {
         this.lose(coin)
         continue
       }
 
-      if (this.box.containsCoin(coin)) {
+      if (catchEnabled && this.box.containsCoin(coin)) {
         this.catch(coin)
       }
     }

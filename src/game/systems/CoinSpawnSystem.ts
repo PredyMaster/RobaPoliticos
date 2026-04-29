@@ -45,7 +45,8 @@ export class CoinSpawnSystem {
     if (this.combo.count >= 20) count = Math.ceil(count * 1.5)  // fever bonus
 
     const baseAngle = Math.atan2(e.direction.y, e.direction.x)
-    const force     = w.force * (0.6 + e.strength * 0.4)
+    // Velocidad reducida: queremos que la gravedad (1000 px/s²) domine el arco
+    const force     = w.force * 0.35
 
     for (let i = 0; i < count; i++) {
       const type  = pickCoinType(COIN_DEFINITIONS, w.rarityBonus)
@@ -53,10 +54,10 @@ export class CoinSpawnSystem {
       const value = def?.value ?? 1
       const angle = spreadAngle(baseAngle, w.spread)
       const vx    = Math.cos(angle) * force
-      const vy    = Math.sin(angle) * force - 250  // upward bias
+      const vy    = Math.sin(angle) * force   // sin sesgo: la gravedad las hala abajo
 
       const coin = this.pool.acquire()
-      coin.reset(this.player.x, this.player.y - 40, vx, vy, type, value)
+      coin.reset(this.player.x, this.player.y, vx, vy, type, value)
     }
   }
 

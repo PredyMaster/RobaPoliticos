@@ -163,10 +163,13 @@ export class GameScene extends Phaser.Scene {
   update(time: number, delta: number): void {
     // La caja se mueve siempre (visible aunque no haya partida activa)
     this.box.updateMovement(delta)
-    if (!this.isRunning) return
-    this.box.applyMagnet(this.pool.getActive())
-    this.collision.update()
+    // Permitimos golpear y soltar monedas también fuera de partida (modo test).
+    // La captura por la caja queda gateada para no contar puntos sin run activo.
     this.checkWeaponPlayerHit(time)
+    this.collision.update(this.isRunning)
+    if (this.isRunning) {
+      this.box.applyMagnet(this.pool.getActive())
+    }
   }
 
   // Cuando el weapon_cursor entra en la zona del player, dispara un hit:
@@ -203,9 +206,9 @@ export class GameScene extends Phaser.Scene {
       dx = v.x / len
       dy = v.y / len
     } else {
-      // Sin velocidad clara: dirige hacia arriba para que las monedas suban antes de caer
-      dx = 0
-      dy = -1
+      // Sin velocidad del cursor: abanico horizontal para que la gravedad las hale directo
+      dx = (Math.random() < 0.5 ? -1 : 1) * Math.random()
+      dy = 0.3
     }
 
     this.events.emit("swipe:hit", {
