@@ -7,17 +7,17 @@ import type { ComboState } from "../types/game"
 // para efectos visuales in-canvas: textos flotantes, flashes de combo,
 // partículas de recompensa, etc. (Fase 16).
 
-const BTN_W = 220
-const BTN_H = 85
+const BTN_W = 290
+const BTN_H = 190
 const MARGIN = 40
 
 const COIN_BG_X = 20
 const COIN_BG_Y = 20
-const COIN_PAD_X = 22
-const COIN_PAD_Y = 16
-const COIN_SLOT_W = 80 // ancho fijo del slot del icono (evita saltos al cambiar imagen)
-const COIN_SLOT_H = 52 // alto máximo del icono (= tamaño de fuente)
-const COIN_GAP = 30
+const COIN_PAD_X = 26
+const COIN_PAD_Y = 18
+const COIN_SLOT_W = 110 // ancho fijo del slot del icono (evita saltos al cambiar imagen)
+const COIN_SLOT_H = 72 // alto máximo del icono (= tamaño de fuente)
+const COIN_GAP = 40
 
 export class UIScene extends Phaser.Scene {
   private comboFlash!: Phaser.GameObjects.Text
@@ -43,7 +43,7 @@ export class UIScene extends Phaser.Scene {
     const textX = COIN_BG_X + COIN_PAD_X + COIN_SLOT_W + COIN_GAP
     this.coinCounter = this.add
       .text(textX, COIN_BG_Y + COIN_PAD_Y, "0", {
-        fontSize: "52px",
+        fontSize: "72px",
         color: "#ffffff",
         fontStyle: "bold",
         stroke: "#000000",
@@ -140,8 +140,8 @@ export class UIScene extends Phaser.Scene {
               : "coin_silver"
     this.coinIcon.setTexture(key)
     const scale = Math.min(
-      COIN_SLOT_W / this.coinIcon.width,
-      COIN_SLOT_H / this.coinIcon.height,
+      (COIN_SLOT_W / this.coinIcon.width) * 1.6,
+      (COIN_SLOT_H / this.coinIcon.height) * 1.6,
     )
     this.coinIcon.setScale(scale)
   }

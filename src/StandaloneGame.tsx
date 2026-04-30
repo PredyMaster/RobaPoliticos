@@ -28,7 +28,7 @@ export function StandaloneGame() {
   return (
     <div
       ref={containerRef}
-      style={{ width: '100vw', height: '100dvh', background: '#1a1a2e' }}
+      style={{ width: '100vw', height: '100dvh', background: "#1a1a2e url('/assets/bg.png') center top/auto 100% repeat-x" }}
     />
   )
 }

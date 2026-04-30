@@ -368,7 +368,7 @@ export function GameScreen() {
       style={{
         width: "100vw",
         height: "100dvh",
-        background: "#000",
+        background: "#1a1a2e url('/assets/bg.png') center top/auto 100% repeat-x",
         position: "relative",
         overflow: "hidden",
         fontFamily: FONT,
