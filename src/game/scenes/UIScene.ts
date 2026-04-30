@@ -9,15 +9,15 @@ import type { ComboState } from "../types/game"
 
 const BTN_W = 290
 const BTN_H = 190
-const MARGIN = 40
+const MARGIN = 60
 
-const COIN_BG_X = 20
-const COIN_BG_Y = 20
+const COIN_BG_X = 60
+const COIN_BG_Y = 80
 const COIN_PAD_X = 26
 const COIN_PAD_Y = 18
-const COIN_SLOT_W = 110 // ancho fijo del slot del icono (evita saltos al cambiar imagen)
-const COIN_SLOT_H = 72 // alto máximo del icono (= tamaño de fuente)
-const COIN_GAP = 40
+const COIN_SLOT_W = 95 // ancho fijo del slot del icono (evita saltos al cambiar imagen)
+const COIN_SLOT_H = 57 // alto máximo del icono (= tamaño de fuente)
+const COIN_GAP = 20
 
 export class UIScene extends Phaser.Scene {
   private comboFlash!: Phaser.GameObjects.Text

@@ -14,6 +14,8 @@ export class WeaponCursor extends Phaser.GameObjects.Image {
 
   private swinging = false
   private isDesktop: boolean
+  // Visual-only scale multiplier; hitZone always stays at WEAPON_W×WEAPON_H
+  private baseScale: number
   private debugGfx?: Phaser.GameObjects.Graphics
 
   private smoothVel: { x: number; y: number } = { x: 0, y: 0 }
@@ -35,6 +37,10 @@ export class WeaponCursor extends Phaser.GameObjects.Image {
 
     // En desktop el cursor sigue al ratón siempre; en móvil solo al tocar
     this.isDesktop = scene.sys.game.device.os.desktop
+
+    // On Android APK the hand looks better at 2× size; collider stays unchanged
+    this.baseScale = scene.sys.game.device.os.android ? 1.5 : 1
+    this.setScale(this.baseScale)
 
     if (this.isDesktop) {
       // Ocultar cursor nativo del navegador sobre el canvas
@@ -113,8 +119,8 @@ export class WeaponCursor extends Phaser.GameObjects.Image {
     this.swinging = true
     this.scene.tweens.add({
       targets: this,
-      scaleX: 1.4,
-      scaleY: 1.4,
+      scaleX: this.baseScale * 1.4,
+      scaleY: this.baseScale * 1.4,
       duration: 90,
       ease: "Power2",
       yoyo: true,
@@ -127,8 +133,9 @@ export class WeaponCursor extends Phaser.GameObjects.Image {
   }
 
   private syncHitZone(): void {
-    const w = WEAPON_W * Math.abs(this.scaleX)
-    const h = WEAPON_H * Math.abs(this.scaleY)
+    // Divide out baseScale so the hitZone is never affected by the visual-only size change
+    const w = WEAPON_W * (Math.abs(this.scaleX) / this.baseScale)
+    const h = WEAPON_H * (Math.abs(this.scaleY) / this.baseScale)
     this.hitZone.setTo(this.x - w / 2, this.y - h / 2, w, h)
     this.redrawDebug()
   }

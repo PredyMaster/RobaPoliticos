@@ -44,8 +44,7 @@ export class GameScene extends Phaser.Scene {
   private cursor!: WeaponCursor
   private pool!: ObjectPool<Coin>
 
-  // Cursor-vs-player overlap detection (desktop only)
-  private isDesktop = false
+  // Cursor-vs-player overlap detection
   private wasWeaponOverPlayer = false
   private lastWeaponHitMs = 0
 
@@ -76,10 +75,10 @@ export class GameScene extends Phaser.Scene {
     const quality =
       (this.registry.get("quality") as GraphicsQuality) || "medium"
 
-    this.isDesktop = this.sys.game.device.os.desktop
     this.buildEntities(weaponId, boxId)
     this.buildSystems(weaponId, boxId, music, sfx, vibration, quality)
     this.registerEventBusListeners()
+    this.input.on('pointerdown', this.onPointerDown, this)
     this.audio.playMusic()
     EventBus.emit("GAME_READY")
   }
@@ -96,6 +95,7 @@ export class GameScene extends Phaser.Scene {
   private onChangeBg(): void {
     this.bgIndex = (this.bgIndex + 1) % BG_KEYS.length
     this.bgImage.setTexture(BG_KEYS[this.bgIndex])
+    EventBus.emit("BG_CHANGED", this.bgIndex)
   }
 
   // ── Entities ──────────────────────────────────────────────
@@ -192,11 +192,21 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
+  // Al tocar la pantalla: si el dedo cae directamente sobre el player, marcamos
+  // wasWeaponOverPlayer=true para que ese frame no cuente como "entrada" y no
+  // dispare un hit (evita que un simple tap saque monedas en móvil).
+  private onPointerDown(): void {
+    const onPlayer = Phaser.Geom.Intersects.RectangleToRectangle(
+      this.cursor.hitZone,
+      this.player.hitZone,
+    )
+    if (onPlayer) this.wasWeaponOverPlayer = true
+  }
+
   // Cuando el weapon_cursor entra en la zona del player, dispara un hit:
   // las monedas salen y caen por gravedad. Detecta el flanco de entrada
   // (no estaba solapando → ahora sí) con un pequeño cooldown anti-spam.
   private checkWeaponPlayerHit(now: number): void {
-    if (!this.isDesktop) return
     if (!this.cursor.visible) {
       this.wasWeaponOverPlayer = false
       return
@@ -255,6 +265,7 @@ export class GameScene extends Phaser.Scene {
     EventBus.off("TOGGLE_MUSIC", this.onToggleMusic, this)
     EventBus.off("TOGGLE_SFX", this.onToggleSfx, this)
     EventBus.off("CHANGE_BG", this.onChangeBg, this)
+    this.input.off('pointerdown', this.onPointerDown, this)
 
     this.swipe?.destroy()
     this.spawn?.destroy()

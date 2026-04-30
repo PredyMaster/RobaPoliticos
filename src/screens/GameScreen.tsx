@@ -270,10 +270,22 @@ function PauseOverlay({
 
 // ── GameScreen ────────────────────────────────────────────────
 
+const BG_URLS = [
+  "/assets/backgrounds/bg1.jpg",
+  "/assets/backgrounds/bg2.jpg",
+  "/assets/backgrounds/bg3.jpg",
+  "/assets/backgrounds/bg4.jpg",
+  "/assets/backgrounds/bg5.jpg",
+  "/assets/backgrounds/bg6.jpg",
+  "/assets/backgrounds/bg7.jpg",
+  "/assets/backgrounds/bg8.jpg",
+]
+
 export function GameScreen() {
   const navigate = useNavigate()
   const containerRef = useRef<HTMLDivElement>(null)
   const gameRef = useRef<Phaser.Game | null>(null)
+  const bgImgRef = useRef<HTMLImageElement>(null)
 
   // ── Stores ────────────────────────────────────────────────
   const isRunActive = useGameStore((s) => s.isRunActive)
@@ -293,6 +305,12 @@ export function GameScreen() {
   const equipment = useInventoryStore((s) => s.equipment)
   const profile = usePlayerStore((s) => s.profile)
 
+  // Fuerza el fondo del body al inicial nada más montar (sobrescribe cualquier caché de index.html)
+  useEffect(() => {
+    document.body.style.background = `#1a1a2e url('${BG_URLS[0]}') center center / cover no-repeat`
+    return () => { document.body.style.background = "" }
+  }, [])
+
   // ── Phaser bootstrap ──────────────────────────────────────
   useEffect(() => {
     if (!containerRef.current) return
@@ -310,6 +328,7 @@ export function GameScreen() {
     return () => {
       gameRef.current?.destroy(true)
       gameRef.current = null
+      document.body.style.background = `#1a1a2e url('${BG_URLS[0]}') center center / cover no-repeat`
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
   // ↑ Intencional: creamos el juego una vez; los cambios de preferencia
@@ -347,11 +366,18 @@ export function GameScreen() {
       navigate("/home", { replace: true })
     }
 
+    const onBgChanged = (index: number) => {
+      const url = BG_URLS[index]
+      if (bgImgRef.current) bgImgRef.current.src = url
+      document.body.style.background = `#1a1a2e url('${url}') center center / cover no-repeat`
+    }
+
     EventBus.on("RUN_SCORE_UPDATED", onScoreUpdated)
     EventBus.on("COMBO_UPDATED", onComboUpdated)
     EventBus.on("RUN_ENDED", onRunEnded)
     EventBus.on("OPEN_PAUSE_MENU", onOpenPauseMenu)
     EventBus.on("EXIT_TO_HOME", onPhaserExitToHome)
+    EventBus.on("BG_CHANGED", onBgChanged)
 
     return () => {
       EventBus.off("RUN_SCORE_UPDATED", onScoreUpdated)
@@ -359,26 +385,42 @@ export function GameScreen() {
       EventBus.off("RUN_ENDED", onRunEnded)
       EventBus.off("OPEN_PAUSE_MENU", onOpenPauseMenu)
       EventBus.off("EXIT_TO_HOME", onPhaserExitToHome)
+      EventBus.off("BG_CHANGED", onBgChanged)
     }
   }, [updateRunScore, updateCombo, endRun, showPauseMenu, navigate])
 
   return (
     <div
       style={{
-        width: "100vw",
-        height: "100dvh",
-        background:
-          "#1a1a2e url('/assets/bg.jpg') center top/auto 100% repeat-x",
+        width: "100%",
+        height: "100%",
+        background: "#1a1a2e",
         position: "relative",
         overflow: "hidden",
         fontFamily: FONT,
       }}
     >
+      {/* Fondo sincronizado con el fondo activo del juego Phaser */}
+      <img
+        ref={bgImgRef}
+        src={BG_URLS[0]}
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          inset: 0,
+          width: "100%",
+          height: "100%",
+          objectFit: "cover",
+          zIndex: 0,
+          pointerEvents: "none",
+        }}
+      />
+
       {/* Phaser canvas container — ocupa todo el espacio; Phaser gestiona su tamaño */}
       <div
         ref={containerRef}
         id="phaser-container"
-        style={{ width: "100%", height: "100%" }}
+        style={{ position: "relative", width: "100%", height: "100%", zIndex: 1 }}
       />
 
       {/* Overlay de inicio (sobre el canvas de Phaser mientras no hay partida activa) */}
@@ -392,6 +434,7 @@ export function GameScreen() {
             alignItems: "center",
             justifyContent: "center",
             gap: 14,
+            zIndex: 2,
             pointerEvents: "none", // pasa eventos al canvas salvo los botones
           }}
         >

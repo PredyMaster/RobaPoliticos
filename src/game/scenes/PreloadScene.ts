@@ -112,7 +112,7 @@ export class PreloadScene extends Phaser.Scene {
 
   // Genera placeholder SOLO para la key que falló al cargar
   private generatePlaceholderFor(key: string): void {
-    const gfx = this.make.graphics({ add: false })
+    const gfx = this.make.graphics({}, false)
 
     switch (key) {
       case "player":
@@ -224,7 +224,7 @@ export class PreloadScene extends Phaser.Scene {
 
   // Placeholders que siempre se generan (plataforma — no tiene sprite real)
   private generateStaticPlaceholders(): void {
-    const gfx = this.make.graphics({ add: false })
+    const gfx = this.make.graphics({}, false)
 
     gfx.fillStyle(0x2a2a4e)
     gfx.fillRect(0, 0, W, 40)

@@ -50,7 +50,7 @@ export class SwipeSystem {
 
     if (!Phaser.Geom.Rectangle.ContainsPoint(
       this.player.hitZone,
-      new Phaser.Geom.Point(pointer.x, pointer.y),
+      new Phaser.Geom.Point(this.downX, this.downY),
     )) return
 
     const dx       = pointer.x - this.downX

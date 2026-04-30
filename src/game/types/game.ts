@@ -119,6 +119,7 @@ export type GraphicsQuality = 'low' | 'medium' | 'high'
 // ── EventBus eventos tipados ─────────────────────────────────
 
 export type GameEventMap = {
+  PRELOAD_COMPLETE: undefined
   GAME_READY: undefined
   RUN_STARTED: undefined
   RUN_SCORE_UPDATED: { runScore: number; totalCoins: number }
@@ -132,6 +133,7 @@ export type GameEventMap = {
   TOGGLE_MUSIC: boolean
   TOGGLE_SFX: boolean
   CHANGE_BG: undefined
+  BG_CHANGED: number
 }
 
 export type GameEventKey = keyof GameEventMap
