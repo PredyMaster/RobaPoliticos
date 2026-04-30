@@ -23,6 +23,14 @@ const REAL_SPRITES: Record<string, string> = {
   bill_green: "assets/coins/bill_green.png",
   bill_pink: "assets/coins/bill_pink.png",
   bg: "assets/bg.jpg",
+  bg1: "assets/backgrounds/bg1.jpg",
+  bg2: "assets/backgrounds/bg2.jpg",
+  bg3: "assets/backgrounds/bg3.jpg",
+  bg4: "assets/backgrounds/bg4.jpg",
+  bg5: "assets/backgrounds/bg5.jpg",
+  bg6: "assets/backgrounds/bg6.jpg",
+  bg7: "assets/backgrounds/bg7.jpg",
+  bg8: "assets/backgrounds/bg8.jpg",
   music_on: "assets/ui/music_on.png",
   music_off: "assets/ui/music_off.png",
   sound_on: "assets/ui/sound_on.png",
@@ -197,9 +205,17 @@ export class PreloadScene extends Phaser.Scene {
         break
 
       case "bg":
+      case "bg1":
+      case "bg2":
+      case "bg3":
+      case "bg4":
+      case "bg5":
+      case "bg6":
+      case "bg7":
+      case "bg8":
         gfx.fillGradientStyle(0x0f0f1e, 0x0f0f1e, 0x1a1a2e, 0x1a1a2e, 1)
         gfx.fillRect(0, 0, W, H)
-        gfx.generateTexture("bg", W, H)
+        gfx.generateTexture(key, W, H)
         break
     }
 
@@ -215,6 +231,14 @@ export class PreloadScene extends Phaser.Scene {
     gfx.lineStyle(2, 0x4a4a8e)
     gfx.strokeRect(0, 0, W, 40)
     gfx.generateTexture("platform", W, 40)
+
+    // Botón de cambio de fondo (flecha derecha)
+    gfx.clear()
+    gfx.fillStyle(0x000000, 0.55)
+    gfx.fillCircle(95, 95, 95)
+    gfx.fillStyle(0xfddb44, 1)
+    gfx.fillTriangle(65, 55, 65, 135, 135, 95)
+    gfx.generateTexture("bg_arrow", 190, 190)
 
     gfx.destroy()
   }

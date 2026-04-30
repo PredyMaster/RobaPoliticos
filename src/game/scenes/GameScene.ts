@@ -28,11 +28,14 @@ const POOL_SIZE = 32
 
 const WEAPON_HIT_COOLDOWN_MS = 220
 
+const BG_KEYS = ["bg1", "bg2", "bg3", "bg4", "bg5", "bg6", "bg7", "bg8"] as const
+
 export class GameScene extends Phaser.Scene {
   private isRunning = false
 
   // Background
   private bgImage!: Phaser.GameObjects.Image
+  private bgIndex = 0
   private readyText!: Phaser.GameObjects.Text
 
   // Entities
@@ -84,9 +87,15 @@ export class GameScene extends Phaser.Scene {
   // ── Background ────────────────────────────────────────────
 
   private buildStaticBackground(): void {
+    this.bgIndex = 0
     this.bgImage = this.add
-      .image(SCENE_W / 2, SCENE_H / 2, "bg")
+      .image(SCENE_W / 2, SCENE_H / 2, BG_KEYS[0])
       .setDisplaySize(SCENE_W, SCENE_H)
+  }
+
+  private onChangeBg(): void {
+    this.bgIndex = (this.bgIndex + 1) % BG_KEYS.length
+    this.bgImage.setTexture(BG_KEYS[this.bgIndex])
   }
 
   // ── Entities ──────────────────────────────────────────────
@@ -139,6 +148,7 @@ export class GameScene extends Phaser.Scene {
     EventBus.on("EXIT_TO_HOME", this.onExitToHome, this)
     EventBus.on("TOGGLE_MUSIC", this.onToggleMusic, this)
     EventBus.on("TOGGLE_SFX", this.onToggleSfx, this)
+    EventBus.on("CHANGE_BG", this.onChangeBg, this)
   }
 
   private onToggleMusic(enabled: boolean): void {
@@ -244,6 +254,7 @@ export class GameScene extends Phaser.Scene {
     EventBus.off("EXIT_TO_HOME", this.onExitToHome, this)
     EventBus.off("TOGGLE_MUSIC", this.onToggleMusic, this)
     EventBus.off("TOGGLE_SFX", this.onToggleSfx, this)
+    EventBus.off("CHANGE_BG", this.onChangeBg, this)
 
     this.swipe?.destroy()
     this.spawn?.destroy()

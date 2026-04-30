@@ -131,6 +131,7 @@ export type GameEventMap = {
   EXIT_TO_HOME: undefined
   TOGGLE_MUSIC: boolean
   TOGGLE_SFX: boolean
+  CHANGE_BG: undefined
 }
 
 export type GameEventKey = keyof GameEventMap

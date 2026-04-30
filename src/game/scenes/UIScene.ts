@@ -30,6 +30,7 @@ export class UIScene extends Phaser.Scene {
 
   private musicBtn!: Phaser.GameObjects.Image
   private sfxBtn!: Phaser.GameObjects.Image
+  private bgArrowBtn!: Phaser.GameObjects.Image
 
   constructor() {
     super({ key: "UIScene", active: false })
@@ -91,6 +92,7 @@ export class UIScene extends Phaser.Scene {
     const x = 1920 - MARGIN - BTN_W / 2
     const y1 = MARGIN + BTN_H / 2
     const y2 = y1 + BTN_H + 30
+    const y3 = y2 + BTN_H + 30
 
     this.musicBtn = this.add
       .image(x, y1, this.musicEnabled ? "music_on" : "music_off")
@@ -117,6 +119,16 @@ export class UIScene extends Phaser.Scene {
     })
     this.sfxBtn.on("pointerover", () => this.sfxBtn.setAlpha(0.8))
     this.sfxBtn.on("pointerout", () => this.sfxBtn.setAlpha(1))
+
+    this.bgArrowBtn = this.add
+      .image(x, y3, "bg_arrow")
+      .setDisplaySize(BTN_H, BTN_H)
+      .setInteractive({ useHandCursor: true })
+      .setDepth(100)
+
+    this.bgArrowBtn.on("pointerdown", () => EventBus.emit("CHANGE_BG"))
+    this.bgArrowBtn.on("pointerover", () => this.bgArrowBtn.setAlpha(0.8))
+    this.bgArrowBtn.on("pointerout", () => this.bgArrowBtn.setAlpha(1))
   }
 
   private refreshMusicBtn(): void {
