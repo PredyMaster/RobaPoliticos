@@ -19,11 +19,22 @@ const COIN_SLOT_W = 95 // ancho fijo del slot del icono (evita saltos al cambiar
 const COIN_SLOT_H = 57 // alto máximo del icono (= tamaño de fuente)
 const COIN_GAP = 20
 
+const TIMER_GAP = 15 // separación vertical entre coinBg y timerBg
+
+const gameTime = 300 // 5 minutos en segundos
+
 export class UIScene extends Phaser.Scene {
   private comboFlash!: Phaser.GameObjects.Text
   private coinCounter!: Phaser.GameObjects.Text
   private coinBg!: Phaser.GameObjects.Graphics
   private coinIcon!: Phaser.GameObjects.Image
+
+  private timerBg!: Phaser.GameObjects.Graphics
+  private timerText!: Phaser.GameObjects.Text
+  private timerBgY = 0
+  private timeRemaining = gameTime
+  private timerActive = false
+  private currentCoins = 0
 
   private musicEnabled = true
   private sfxEnabled = true
@@ -66,6 +77,23 @@ export class UIScene extends Phaser.Scene {
 
     this.resizeBg()
 
+    // Temporizador de cuenta atrás debajo del coinCounter
+    this.timerBgY = COIN_BG_Y + this.coinCounter.height + COIN_PAD_Y * 2 + TIMER_GAP
+    this.timerBg = this.add.graphics().setDepth(99)
+
+    this.timerText = this.add
+      .text(COIN_BG_X + COIN_PAD_X, this.timerBgY + COIN_PAD_Y, this.formatTime(gameTime), {
+        fontSize: "72px",
+        color: "#ffffff",
+        fontStyle: "bold",
+        stroke: "#000000",
+        strokeThickness: 7,
+      })
+      .setOrigin(0, 0)
+      .setDepth(100)
+
+    this.resizeTimerBg()
+
     // Texto de combo flash (visible brevemente al cambiar nivel)
     this.comboFlash = this.add
       .text(1920 / 2, 300, "", {
@@ -86,6 +114,56 @@ export class UIScene extends Phaser.Scene {
     EventBus.on("COMBO_UPDATED", this.onComboUpdated, this)
     EventBus.on("RUN_SCORE_UPDATED", this.onScoreUpdated, this)
     EventBus.on("RUN_STARTED", this.onRunStarted, this)
+    EventBus.on("RUN_PAUSED", this.onRunPaused, this)
+    EventBus.on("RUN_RESUMED", this.onRunResumed, this)
+  }
+
+  update(_time: number, delta: number): void {
+    if (!this.timerActive || this.timeRemaining <= 0) return
+
+    this.timeRemaining -= delta / 1000
+
+    if (this.timeRemaining <= 0) {
+      this.timeRemaining = 0
+      this.timerActive = false
+      this.timerText.setText("0:00")
+      this.resizeTimerBg()
+      this.onTimeUp()
+      return
+    }
+
+    this.timerText.setText(this.formatTime(this.timeRemaining))
+
+    const ratio = this.timeRemaining / gameTime
+    if (ratio <= 0.05) {
+      this.timerText.setColor("#ff4444")
+    } else if (ratio <= 0.10) {
+      this.timerText.setColor("#f4c542")
+    } else {
+      this.timerText.setColor("#ffffff")
+    }
+
+    this.resizeTimerBg()
+  }
+
+  private formatTime(seconds: number): string {
+    const s = Math.max(0, seconds)
+    const m = Math.floor(s / 60)
+    const sec = Math.floor(s % 60)
+    return `${m}:${sec.toString().padStart(2, "0")}`
+  }
+
+  private resizeTimerBg(): void {
+    const w = COIN_PAD_X + this.timerText.width + COIN_PAD_X
+    const h = this.timerText.height + COIN_PAD_Y * 2
+    this.timerBg.clear()
+    this.timerBg.fillStyle(0x000000, 0.55)
+    this.timerBg.fillRoundedRect(COIN_BG_X, this.timerBgY, w, h, 14)
+  }
+
+  private onTimeUp(): void {
+    EventBus.emit("RUN_PAUSED")
+    this.scene.launch("GameOverScene", { coins: this.currentCoins })
   }
 
   private createAudioButtons(): void {
@@ -162,6 +240,20 @@ export class UIScene extends Phaser.Scene {
     this.coinCounter.setText("0")
     this.updateCoinIcon(0)
     this.resizeBg()
+    this.currentCoins = 0
+    this.timeRemaining = gameTime
+    this.timerActive = true
+    this.timerText.setText(this.formatTime(gameTime))
+    this.timerText.setColor("#ffffff")
+    this.resizeTimerBg()
+  }
+
+  private onRunPaused(): void {
+    this.timerActive = false
+  }
+
+  private onRunResumed(): void {
+    if (this.timeRemaining > 0) this.timerActive = true
   }
 
   private onScoreUpdated({
@@ -173,6 +265,7 @@ export class UIScene extends Phaser.Scene {
     this.coinCounter.setText(`${totalCoins}`)
     this.updateCoinIcon(totalCoins)
     this.resizeBg()
+    this.currentCoins = totalCoins
   }
 
   private resizeBg(): void {
@@ -207,5 +300,7 @@ export class UIScene extends Phaser.Scene {
     EventBus.off("COMBO_UPDATED", this.onComboUpdated, this)
     EventBus.off("RUN_SCORE_UPDATED", this.onScoreUpdated, this)
     EventBus.off("RUN_STARTED", this.onRunStarted, this)
+    EventBus.off("RUN_PAUSED", this.onRunPaused, this)
+    EventBus.off("RUN_RESUMED", this.onRunResumed, this)
   }
 }

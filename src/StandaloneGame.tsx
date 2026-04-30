@@ -22,7 +22,9 @@ export function StandaloneGame() {
   // Fuerza el fondo del body al inicial, sobrescribiendo cualquier caché de index.html
   useEffect(() => {
     document.body.style.background = `#1a1a2e url('${BG_URLS[0]}') center center / cover no-repeat`
-    return () => { document.body.style.background = "" }
+    return () => {
+      document.body.style.background = ""
+    }
   }, [])
 
   useEffect(() => {
@@ -44,6 +46,14 @@ export function StandaloneGame() {
     }
   }, [])
 
+  // Arranca la partida automáticamente cada vez que GameScene está lista
+  // (primera carga y tras reinicio desde GameOverScene)
+  useEffect(() => {
+    const onGameReady = () => EventBus.emit("RUN_STARTED")
+    EventBus.on("GAME_READY", onGameReady)
+    return () => { EventBus.off("GAME_READY", onGameReady) }
+  }, [])
+
   // Sincroniza el fondo HTML con el fondo activo del juego Phaser
   useEffect(() => {
     const onBgChanged = (index: number) => {
@@ -53,7 +63,9 @@ export function StandaloneGame() {
     }
 
     EventBus.on("BG_CHANGED", onBgChanged)
-    return () => { EventBus.off("BG_CHANGED", onBgChanged) }
+    return () => {
+      EventBus.off("BG_CHANGED", onBgChanged)
+    }
   }, [])
 
   return (
@@ -67,7 +79,7 @@ export function StandaloneGame() {
       }}
     >
       {/* Fondo sincronizado con el fondo activo del juego Phaser */}
-      <img
+      {/* <img
         ref={bgImgRef}
         src={BG_URLS[0]}
         aria-hidden="true"
@@ -80,12 +92,17 @@ export function StandaloneGame() {
           zIndex: 0,
           pointerEvents: "none",
         }}
-      />
+      /> */}
 
       {/* Phaser canvas container */}
       <div
         ref={containerRef}
-        style={{ position: "relative", width: "100%", height: "100%", zIndex: 1 }}
+        style={{
+          position: "relative",
+          width: "100%",
+          height: "100%",
+          zIndex: 1,
+        }}
       />
     </div>
   )

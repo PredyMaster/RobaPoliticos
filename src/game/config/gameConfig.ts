@@ -3,6 +3,7 @@ import { BootScene } from '../scenes/BootScene'
 import { PreloadScene } from '../scenes/PreloadScene'
 import { GameScene } from '../scenes/GameScene'
 import { UIScene } from '../scenes/UIScene'
+import { GameOverScene } from '../scenes/GameOverScene'
 import { PHYSICS_CONFIG } from './physicsConfig'
 
 export function buildGameConfig(parent: HTMLElement): Phaser.Types.Core.GameConfig {
@@ -19,7 +20,7 @@ export function buildGameConfig(parent: HTMLElement): Phaser.Types.Core.GameConf
       expandParent: false,
     },
     physics: PHYSICS_CONFIG,
-    scene: [BootScene, PreloadScene, GameScene, UIScene],
+    scene: [BootScene, PreloadScene, GameScene, UIScene, GameOverScene],
     banner: false,
     title: 'Roba Políticos',
     version: '0.1.0',
