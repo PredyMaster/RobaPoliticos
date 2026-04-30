@@ -6,13 +6,15 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:no-check": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "cap:sync": "npm run build && npx cap sync",
+    "cap:sync": "npm run build:no-check && npx cap sync android",
     "cap:android": "npm run cap:sync && npx cap open android",
-    "cap:ios": "npm run cap:sync && npx cap open ios"
+    "cap:ios": "npm run build:no-check && npx cap sync ios && npx cap open ios",
+    "build:apk": "bash build-apk.sh"
   },
   "dependencies": {
     "@capacitor/android": "^8.3.1",
