@@ -1,29 +1,33 @@
-import * as Phaser from 'phaser'
-import type { BoxItem } from '../types/game'
-import { SCENE_W, GROUND_Y, SHOW_COLLIDERS } from '../scenes/GameScene'
-import type { Coin } from './Coin'
+import * as Phaser from "phaser"
+import type { BoxItem } from "../types/game"
+import { SCENE_W, GROUND_Y, SHOW_COLLIDERS } from "../scenes/GameScene"
+import type { Coin } from "./Coin"
 
 const SAFE_MARGIN = 30
+const VISUAL_SCALE = 1.9
 
 export class CatchBox extends Phaser.GameObjects.Image {
   readonly catchArea: Phaser.Geom.Rectangle
 
   private cfg: BoxItem
-  private dir = 1    // +1 = right, -1 = left
+  private dir = 1 // +1 = right, -1 = left
   private vx = 0
   private debugGfx?: Phaser.GameObjects.Graphics
 
   constructor(scene: Phaser.Scene, config: BoxItem) {
     const x = SCENE_W / 2
     const y = GROUND_Y - config.height / 2
-    super(scene, x, y, 'catch_box')
+    super(scene, x, y, "catch_box")
     this.cfg = config
     scene.add.existing(this)
-    this.setDisplaySize(config.width, config.height)
+    this.setDisplaySize(
+      config.width * VISUAL_SCALE,
+      config.height * VISUAL_SCALE,
+    )
 
     this.catchArea = new Phaser.Geom.Rectangle(
-      x - config.width / 2,
-      y - config.height / 2,
+      x - config.width,
+      y - config.height,
       config.width,
       config.height,
     )
@@ -37,7 +41,10 @@ export class CatchBox extends Phaser.GameObjects.Image {
 
   setConfig(config: BoxItem): void {
     this.cfg = config
-    this.setDisplaySize(config.width, config.height)
+    this.setDisplaySize(
+      config.width * VISUAL_SCALE,
+      config.height * VISUAL_SCALE,
+    )
     this.syncCatchArea()
   }
 
@@ -56,8 +63,16 @@ export class CatchBox extends Phaser.GameObjects.Image {
 
     const minX = this.cfg.width / 2 + SAFE_MARGIN
     const maxX = SCENE_W - this.cfg.width / 2 - SAFE_MARGIN
-    if (this.x <= minX) { this.x = minX; this.dir = 1;  this.vx = 0 }
-    if (this.x >= maxX) { this.x = maxX; this.dir = -1; this.vx = 0 }
+    if (this.x <= minX) {
+      this.x = minX
+      this.dir = 1
+      this.vx = 0
+    }
+    if (this.x >= maxX) {
+      this.x = maxX
+      this.dir = -1
+      this.vx = 0
+    }
 
     this.syncCatchArea()
   }

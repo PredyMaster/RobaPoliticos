@@ -14,6 +14,9 @@ const TEXTURE_MAP: Record<CoinTypeId, string> = {
 export class Coin extends Phaser.Physics.Arcade.Sprite {
   coinState!: CoinState
 
+  // rad/s: coins snap quickly to trajectory, bills flutter slowly
+  private rotationSpeed = 0
+
   private debugGfx?: Phaser.GameObjects.Graphics
 
   constructor(scene: Phaser.Scene) {
@@ -56,6 +59,10 @@ export class Coin extends Phaser.Physics.Arcade.Sprite {
     body.setGravityY(gravityYOffset) // local: suma a la gravedad mundial (1000). Negativo = menos gravedad neta
     body.setVelocity(vx, vy)
 
+    const isBill = type.startsWith('bill_')
+    this.rotationSpeed = isBill ? 3 : 8
+    this.setRotation((Math.random() * 2 - 1) * 0.3) // small random initial tilt
+
     this.coinState = {
       type,
       value,
@@ -65,8 +72,25 @@ export class Coin extends Phaser.Physics.Arcade.Sprite {
     }
   }
 
+  preUpdate(time: number, delta: number): void {
+    super.preUpdate(time, delta)
+    if (!this.active) return
+
+    const body = this.body as Phaser.Physics.Arcade.Body
+    const { x: vx, y: vy } = body.velocity
+    if (vx * vx + vy * vy > 400) { // > 20 px/s
+      const targetAngle = Math.atan2(vy, vx)
+      this.rotation = Phaser.Math.Angle.RotateTo(
+        this.rotation,
+        targetAngle,
+        this.rotationSpeed * (delta / 1000),
+      )
+    }
+  }
+
   despawn(): void {
     this.setActive(false).setVisible(false)
+    this.setRotation(0)
     this.setScale(1) // reset para reutilización del pool
     const body = this.body as Phaser.Physics.Arcade.Body
     body.setVelocity(0, 0)

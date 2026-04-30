@@ -85,8 +85,12 @@ export class CoinSpawnSystem {
         ? 1.2 + Math.random() * 0.4   // 1.20 – 1.60
         : 0.7 + Math.random() * 0.4   // 0.70 – 1.10
 
+      // Coins are heavier: extra +400 px/s² on top of world gravity (1000).
+      // Bills are lighter: -400 px/s², so they float longer before dropping.
+      const gravityYOffset = isBill ? -400 : 400
+
       const coin = this.pool.acquire()
-      coin.reset(spawnX, spawnY, vx, vy, type, value, 0, scale)
+      coin.reset(spawnX, spawnY, vx, vy, type, value, gravityYOffset, scale)
     }
   }
 

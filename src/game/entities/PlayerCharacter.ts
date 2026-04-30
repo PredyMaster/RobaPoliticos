@@ -4,6 +4,7 @@ import type { SwipeHitEvent } from "../systems/SwipeSystem"
 
 const PLAYER_W = 464
 const PLAYER_H = 515
+const VISUAL_SCALE = 1.2
 
 const SLAP_DURATION_MS = 250
 const HARD_SLAP_THRESHOLD = 0.65
@@ -17,9 +18,11 @@ export class PlayerCharacter extends Phaser.GameObjects.Sprite {
 
   constructor(scene: Phaser.Scene) {
     const x = SCENE_W / 2
-    const y = SCENE_H / 2 - 66
+    const y = SCENE_H / 2 - 120
     super(scene, x, y, "player")
     scene.add.existing(this)
+
+    this.setScale(VISUAL_SCALE)
 
     this.hitZone = new Phaser.Geom.Rectangle(
       x - PLAYER_W / 2,
@@ -61,8 +64,8 @@ export class PlayerCharacter extends Phaser.GameObjects.Sprite {
     this.recovering = true
 
     const knockbackX = -direction.x * (isCritical ? 20 : 8)
-    const targetScaleX = 1
-    const targetScaleY = 1
+    const targetScaleX = VISUAL_SCALE
+    const targetScaleY = VISUAL_SCALE
 
     this.scene.tweens.add({
       targets: this,
@@ -80,7 +83,12 @@ export class PlayerCharacter extends Phaser.GameObjects.Sprite {
       },
     })
 
-    this.scene.events.emit("player:hit", { direction, isCritical, x: this.x, y: this.y })
+    this.scene.events.emit("player:hit", {
+      direction,
+      isCritical,
+      x: this.x,
+      y: this.y,
+    })
   }
 
   private syncHitZone(): void {

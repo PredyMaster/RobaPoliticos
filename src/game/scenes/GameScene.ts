@@ -126,19 +126,17 @@ export class GameScene extends Phaser.Scene {
       boxId,
     )
     this.haptics = new HapticsSystem(this, vibration)
-
-
   }
 
   // ── EventBus bridge ───────────────────────────────────────
 
   private registerEventBusListeners(): void {
-    EventBus.on("RUN_STARTED",   this.onRunStarted,   this)
-    EventBus.on("RUN_PAUSED",    this.onRunPaused,    this)
-    EventBus.on("RUN_RESUMED",   this.onRunResumed,   this)
-    EventBus.on("EXIT_TO_HOME",  this.onExitToHome,   this)
-    EventBus.on("TOGGLE_MUSIC",  this.onToggleMusic,  this)
-    EventBus.on("TOGGLE_SFX",    this.onToggleSfx,    this)
+    EventBus.on("RUN_STARTED", this.onRunStarted, this)
+    EventBus.on("RUN_PAUSED", this.onRunPaused, this)
+    EventBus.on("RUN_RESUMED", this.onRunResumed, this)
+    EventBus.on("EXIT_TO_HOME", this.onExitToHome, this)
+    EventBus.on("TOGGLE_MUSIC", this.onToggleMusic, this)
+    EventBus.on("TOGGLE_SFX", this.onToggleSfx, this)
   }
 
   private onToggleMusic(enabled: boolean): void {
@@ -237,12 +235,12 @@ export class GameScene extends Phaser.Scene {
   // ── Lifecycle ─────────────────────────────────────────────
 
   shutdown(): void {
-    EventBus.off("RUN_STARTED",  this.onRunStarted,  this)
-    EventBus.off("RUN_PAUSED",   this.onRunPaused,   this)
-    EventBus.off("RUN_RESUMED",  this.onRunResumed,  this)
-    EventBus.off("EXIT_TO_HOME", this.onExitToHome,  this)
+    EventBus.off("RUN_STARTED", this.onRunStarted, this)
+    EventBus.off("RUN_PAUSED", this.onRunPaused, this)
+    EventBus.off("RUN_RESUMED", this.onRunResumed, this)
+    EventBus.off("EXIT_TO_HOME", this.onExitToHome, this)
     EventBus.off("TOGGLE_MUSIC", this.onToggleMusic, this)
-    EventBus.off("TOGGLE_SFX",   this.onToggleSfx,   this)
+    EventBus.off("TOGGLE_SFX", this.onToggleSfx, this)
 
     this.swipe?.destroy()
     this.spawn?.destroy()

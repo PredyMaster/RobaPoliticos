@@ -23,6 +23,10 @@ const REAL_SPRITES: Record<string, string> = {
   bill_green:        'assets/coins/bill_green.png',
   bill_pink:         'assets/coins/bill_pink.png',
   bg:                'assets/bg.png',
+  music_on:          'assets/ui/music_on.png',
+  music_off:         'assets/ui/music_off.png',
+  sound_on:          'assets/ui/sound_on.png',
+  sound_off:         'assets/ui/sound_off.png',
 }
 
 export class PreloadScene extends Phaser.Scene {
