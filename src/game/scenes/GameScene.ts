@@ -41,7 +41,8 @@ export class GameScene extends Phaser.Scene {
   private cursor!: WeaponCursor
   private pool!: ObjectPool<Coin>
 
-  // Cursor-vs-player overlap detection
+  // Cursor-vs-player overlap detection (desktop only)
+  private isDesktop = false
   private wasWeaponOverPlayer = false
   private lastWeaponHitMs = 0
 
@@ -72,6 +73,7 @@ export class GameScene extends Phaser.Scene {
     const quality =
       (this.registry.get("quality") as GraphicsQuality) || "medium"
 
+    this.isDesktop = this.sys.game.device.os.desktop
     this.buildEntities(weaponId, boxId)
     this.buildSystems(weaponId, boxId, music, sfx, vibration, quality)
     this.registerEventBusListeners()
@@ -184,6 +186,7 @@ export class GameScene extends Phaser.Scene {
   // las monedas salen y caen por gravedad. Detecta el flanco de entrada
   // (no estaba solapando → ahora sí) con un pequeño cooldown anti-spam.
   private checkWeaponPlayerHit(now: number): void {
+    if (!this.isDesktop) return
     if (!this.cursor.visible) {
       this.wasWeaponOverPlayer = false
       return

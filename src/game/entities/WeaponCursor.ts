@@ -76,7 +76,11 @@ export class WeaponCursor extends Phaser.GameObjects.Image {
     } else if (pointer.isDown) {
       const dx = pointer.x - pointer.downX
       const dy = pointer.y - pointer.downY
-      if (dx !== 0 || dy !== 0) this.targetRotation = Math.atan2(dy, dx)
+      if (dx !== 0 || dy !== 0) {
+        this.targetRotation = Math.atan2(dy, dx)
+        // On Android/Capacitor, pointer.velocity is unreliable; use total displacement instead
+        this.lastVelocity = { x: dx, y: dy }
+      }
     }
   }
 
