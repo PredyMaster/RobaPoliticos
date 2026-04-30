@@ -238,6 +238,13 @@ export class PreloadScene extends Phaser.Scene {
       )
     }
 
+    for (let i = 1; i <= 6; i++) {
+      this.load.audio(
+        `sfx_player_${i}`,
+        `assets/audio/sound%20effects/player/player-sound${i}.mp3`,
+      )
+    }
+
     this.load.audio(
       "bgm",
       "assets/audio/background%20music/robaPoliticosSong.mp3",

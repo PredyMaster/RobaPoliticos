@@ -13,7 +13,6 @@ import { C, FONT } from "./shared/theme"
 
 function GameHUD({ onPause }: { onPause: () => void }) {
   const runScore = useGameStore((s) => s.runScore)
-  const runCoins = useGameStore((s) => s.runCoins)
   const runCombo = useGameStore((s) => s.runCombo)
 
   const showCombo = runCombo !== null && runCombo.active && runCombo.count >= 2
