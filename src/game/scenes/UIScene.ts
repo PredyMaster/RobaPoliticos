@@ -9,7 +9,7 @@ import type { ComboState } from "../types/game"
 
 const BTN_W = 290
 const BTN_H = 190
-const MARGIN = 60
+const MARGIN = 80
 
 const COIN_BG_X = 60
 const COIN_BG_Y = 80
@@ -78,17 +78,23 @@ export class UIScene extends Phaser.Scene {
     this.resizeBg()
 
     // Temporizador de cuenta atrás debajo del coinCounter
-    this.timerBgY = COIN_BG_Y + this.coinCounter.height + COIN_PAD_Y * 2 + TIMER_GAP
+    this.timerBgY =
+      COIN_BG_Y + this.coinCounter.height + COIN_PAD_Y * 2 + TIMER_GAP
     this.timerBg = this.add.graphics().setDepth(99)
 
     this.timerText = this.add
-      .text(COIN_BG_X + COIN_PAD_X, this.timerBgY + COIN_PAD_Y, this.formatTime(gameTime), {
-        fontSize: "72px",
-        color: "#ffffff",
-        fontStyle: "bold",
-        stroke: "#000000",
-        strokeThickness: 7,
-      })
+      .text(
+        COIN_BG_X + COIN_PAD_X,
+        this.timerBgY + COIN_PAD_Y,
+        this.formatTime(gameTime),
+        {
+          fontSize: "72px",
+          color: "#ffffff",
+          fontStyle: "bold",
+          stroke: "#000000",
+          strokeThickness: 7,
+        },
+      )
       .setOrigin(0, 0)
       .setDepth(100)
 
@@ -116,6 +122,11 @@ export class UIScene extends Phaser.Scene {
     EventBus.on("RUN_STARTED", this.onRunStarted, this)
     EventBus.on("RUN_PAUSED", this.onRunPaused, this)
     EventBus.on("RUN_RESUMED", this.onRunResumed, this)
+
+    // UIScene se lanza junto a GameScene; GameScene emite GAME_READY antes de
+    // que UIScene termine su create(), así que RUN_STARTED llega antes de que
+    // el listener esté registrado. Arrancamos el timer directamente aquí.
+    this.timerActive = true
   }
 
   update(_time: number, delta: number): void {
@@ -137,7 +148,7 @@ export class UIScene extends Phaser.Scene {
     const ratio = this.timeRemaining / gameTime
     if (ratio <= 0.05) {
       this.timerText.setColor("#ff4444")
-    } else if (ratio <= 0.10) {
+    } else if (ratio <= 0.1) {
       this.timerText.setColor("#f4c542")
     } else {
       this.timerText.setColor("#ffffff")
@@ -167,7 +178,7 @@ export class UIScene extends Phaser.Scene {
   }
 
   private createAudioButtons(): void {
-    const x = 1920 - MARGIN - BTN_W / 2
+    const x = 1920 - (MARGIN - 90) - BTN_W / 2
     const y1 = MARGIN + BTN_H / 2
     const y2 = y1 + BTN_H + 30
     const y3 = y2 + BTN_H + 30
@@ -246,10 +257,28 @@ export class UIScene extends Phaser.Scene {
     this.timerText.setText(this.formatTime(gameTime))
     this.timerText.setColor("#ffffff")
     this.resizeTimerBg()
+    this.setButtonsEnabled(true)
   }
 
   private onRunPaused(): void {
     this.timerActive = false
+    this.setButtonsEnabled(false)
+  }
+
+  private setButtonsEnabled(enabled: boolean): void {
+    if (enabled) {
+      this.musicBtn.setInteractive({ useHandCursor: true })
+      this.sfxBtn.setInteractive({ useHandCursor: true })
+      this.bgArrowBtn.setInteractive({ useHandCursor: true })
+    } else {
+      this.musicBtn.disableInteractive()
+      this.sfxBtn.disableInteractive()
+      this.bgArrowBtn.disableInteractive()
+    }
+    const alpha = enabled ? 1 : 0.4
+    this.musicBtn.setAlpha(alpha)
+    this.sfxBtn.setAlpha(alpha)
+    this.bgArrowBtn.setAlpha(alpha)
   }
 
   private onRunResumed(): void {

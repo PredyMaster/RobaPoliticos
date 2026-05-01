@@ -28,15 +28,24 @@ const POOL_SIZE = 32
 
 const WEAPON_HIT_COOLDOWN_MS = 220
 
-const BG_KEYS = ["bg1", "bg2", "bg3", "bg4", "bg5", "bg6", "bg7", "bg8"] as const
+const BG_KEYS = [
+  "bg1",
+  "bg2",
+  "bg3",
+  "bg4",
+  "bg5",
+  "bg6",
+  "bg7",
+  "bg8",
+] as const
 
 export class GameScene extends Phaser.Scene {
   private isRunning = false
+  private isPaused = false
 
   // Background
   private bgImage!: Phaser.GameObjects.Image
   private bgIndex = 0
-  private readyText!: Phaser.GameObjects.Text
 
   // Entities
   private player!: PlayerCharacter
@@ -64,6 +73,8 @@ export class GameScene extends Phaser.Scene {
   }
 
   create(): void {
+    this.isRunning = false
+    this.isPaused = false
     this.buildStaticBackground()
 
     const weaponId =
@@ -78,7 +89,7 @@ export class GameScene extends Phaser.Scene {
     this.buildEntities(weaponId, boxId)
     this.buildSystems(weaponId, boxId, music, sfx, vibration, quality)
     this.registerEventBusListeners()
-    this.input.on('pointerdown', this.onPointerDown, this)
+    this.input.on("pointerdown", this.onPointerDown, this)
     this.audio.playMusic()
     EventBus.emit("GAME_READY")
   }
@@ -161,17 +172,28 @@ export class GameScene extends Phaser.Scene {
 
   private onRunStarted(): void {
     if (this.isRunning) return
+    for (const coin of this.pool.getActive()) {
+      coin.despawn()
+      this.pool.release(coin)
+    }
+    this.score.reset()
+    this.combo.reset()
+    this.isPaused = false
+    this.physics.resume()
     this.isRunning = true
     this.economy.startTracking()
   }
 
   private onRunPaused(): void {
     if (!this.isRunning) return
+    this.isRunning = false
+    this.isPaused = true
     this.physics.pause()
   }
 
   private onRunResumed(): void {
     if (!this.isRunning) return
+    this.isPaused = false
     this.physics.resume()
   }
 
@@ -184,6 +206,7 @@ export class GameScene extends Phaser.Scene {
   // ── Gameplay loop ─────────────────────────────────────────
 
   update(time: number, delta: number): void {
+    if (this.isPaused) return
     this.box.updateMovement(delta)
     this.checkWeaponPlayerHit(time)
     this.collision.update(true)
@@ -265,7 +288,7 @@ export class GameScene extends Phaser.Scene {
     EventBus.off("TOGGLE_MUSIC", this.onToggleMusic, this)
     EventBus.off("TOGGLE_SFX", this.onToggleSfx, this)
     EventBus.off("CHANGE_BG", this.onChangeBg, this)
-    this.input.off('pointerdown', this.onPointerDown, this)
+    this.input.off("pointerdown", this.onPointerDown, this)
 
     this.swipe?.destroy()
     this.spawn?.destroy()

@@ -77,11 +77,7 @@ export class GameOverScene extends Phaser.Scene {
   }
 
   private onPlayAgain(): void {
-    const gsScene = this.scene.get("GameScene")
-    gsScene.events.once("create", () => {
-      EventBus.emit("RUN_STARTED")
-    })
-    this.scene.restart("GameScene")
+    EventBus.emit("RUN_STARTED")
     this.scene.stop()
   }
 
