@@ -1,6 +1,8 @@
 import * as Phaser from "phaser"
 import { EventBus } from "../EventBus"
 import type { ComboState } from "../types/game"
+import { useGameStore } from "../../store/useGameStore"
+import { openShopOverlay } from "../ui/shopOverlay"
 
 // UIScene corre en paralelo sobre GameScene.
 // React gestiona el HUD principal (GameHUD); esta escena se reserva
@@ -20,6 +22,9 @@ const COIN_SLOT_H = 57 // alto máximo del icono (= tamaño de fuente)
 const COIN_GAP = 20
 
 const TIMER_GAP = 15 // separación vertical entre coinBg y timerBg
+const SHOP_BTN_GAP = 22
+const SHOP_BTN_W = 300
+const SHOP_BTN_H = 88
 
 const gameTime = 300 // 5 minutos en segundos
 
@@ -34,7 +39,10 @@ export class UIScene extends Phaser.Scene {
   private timerBgY = 0
   private timeRemaining = gameTime
   private timerActive = false
+  private runStarted = false
   private currentCoins = 0
+  private shopButton!: Phaser.GameObjects.Container
+  private shopButtonHitArea!: Phaser.GameObjects.Zone
 
   private musicEnabled = true
   private sfxEnabled = true
@@ -99,6 +107,7 @@ export class UIScene extends Phaser.Scene {
       .setDepth(100)
 
     this.resizeTimerBg()
+    this.createShopButton()
 
     // Texto de combo flash (visible brevemente al cambiar nivel)
     this.comboFlash = this.add
@@ -123,10 +132,11 @@ export class UIScene extends Phaser.Scene {
     EventBus.on("RUN_PAUSED", this.onRunPaused, this)
     EventBus.on("RUN_RESUMED", this.onRunResumed, this)
 
-    // UIScene se lanza junto a GameScene; GameScene emite GAME_READY antes de
-    // que UIScene termine su create(), así que RUN_STARTED llega antes de que
-    // el listener esté registrado. Arrancamos el timer directamente aquí.
-    this.timerActive = true
+    const { isPaused } = useGameStore.getState()
+    this.runStarted = true
+    this.timerActive = !isPaused
+    this.setShopButtonEnabled(!isPaused)
+    if (isPaused) this.onRunPaused()
   }
 
   update(_time: number, delta: number): void {
@@ -173,8 +183,53 @@ export class UIScene extends Phaser.Scene {
   }
 
   private onTimeUp(): void {
+    this.runStarted = false
     EventBus.emit("RUN_PAUSED")
     this.scene.launch("GameOverScene", { coins: this.currentCoins })
+  }
+
+  private createShopButton(): void {
+    const buttonY =
+      this.timerBgY + this.timerText.height + COIN_PAD_Y * 2 + SHOP_BTN_GAP
+
+    const bg = this.add.graphics()
+    bg.fillStyle(0xf4c542, 1)
+    bg.lineStyle(5, 0xc49b10, 1)
+    bg.fillRoundedRect(0, 0, SHOP_BTN_W, SHOP_BTN_H, 24)
+    bg.strokeRoundedRect(0, 0, SHOP_BTN_W, SHOP_BTN_H, 24)
+
+    const label = this.add
+      .text(SHOP_BTN_W / 2, SHOP_BTN_H / 2, "Tienda", {
+        fontSize: "44px",
+        color: "#1a1a2e",
+        fontStyle: "bold",
+        stroke: "#fff4bf",
+        strokeThickness: 2,
+      })
+      .setOrigin(0.5)
+
+    this.shopButton = this.add
+      .container(COIN_BG_X, buttonY, [bg, label])
+      .setDepth(100)
+
+    this.shopButtonHitArea = this.add
+      .zone(
+        COIN_BG_X + SHOP_BTN_W / 2,
+        buttonY + SHOP_BTN_H / 2,
+        SHOP_BTN_W,
+        SHOP_BTN_H,
+      )
+      .setDepth(101)
+      .setInteractive({ useHandCursor: true })
+
+    this.shopButtonHitArea.on("pointerdown", () => {
+      if (!this.runStarted || !this.timerActive || this.timeRemaining <= 0) {
+        return
+      }
+      EventBus.emit("RUN_PAUSED")
+      useGameStore.getState().openShop()
+      openShopOverlay()
+    })
   }
 
   private createAudioButtons(): void {
@@ -248,6 +303,7 @@ export class UIScene extends Phaser.Scene {
   }
 
   private onRunStarted(): void {
+    this.runStarted = true
     this.coinCounter.setText("0")
     this.updateCoinIcon(0)
     this.resizeBg()
@@ -257,32 +313,29 @@ export class UIScene extends Phaser.Scene {
     this.timerText.setText(this.formatTime(gameTime))
     this.timerText.setColor("#ffffff")
     this.resizeTimerBg()
-    this.setButtonsEnabled(true)
+    this.setShopButtonEnabled(true)
   }
 
   private onRunPaused(): void {
     this.timerActive = false
-    this.setButtonsEnabled(false)
+    this.setShopButtonEnabled(false)
   }
 
-  private setButtonsEnabled(enabled: boolean): void {
+  private setShopButtonEnabled(enabled: boolean): void {
     if (enabled) {
-      this.musicBtn.setInteractive({ useHandCursor: true })
-      this.sfxBtn.setInteractive({ useHandCursor: true })
-      this.bgArrowBtn.setInteractive({ useHandCursor: true })
+      this.shopButtonHitArea.setInteractive({ useHandCursor: true })
     } else {
-      this.musicBtn.disableInteractive()
-      this.sfxBtn.disableInteractive()
-      this.bgArrowBtn.disableInteractive()
+      this.shopButtonHitArea.disableInteractive()
     }
-    const alpha = enabled ? 1 : 0.4
-    this.musicBtn.setAlpha(alpha)
-    this.sfxBtn.setAlpha(alpha)
-    this.bgArrowBtn.setAlpha(alpha)
+    this.shopButton.setAlpha(enabled ? 1 : 0.4)
+    this.shopButton.setScale(1)
   }
 
   private onRunResumed(): void {
-    if (this.timeRemaining > 0) this.timerActive = true
+    if (this.timeRemaining > 0) {
+      this.timerActive = true
+      if (this.runStarted) this.setShopButtonEnabled(true)
+    }
   }
 
   private onScoreUpdated({

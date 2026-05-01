@@ -192,7 +192,8 @@ export class GameScene extends Phaser.Scene {
   }
 
   private onRunResumed(): void {
-    if (!this.isRunning) return
+    if (!this.isPaused) return
+    this.isRunning = true
     this.isPaused = false
     this.physics.resume()
   }

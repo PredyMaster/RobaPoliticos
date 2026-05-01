@@ -10,18 +10,34 @@ import { C, FONT, cardStyle } from './shared/theme'
 
 type Tab = 'weapons' | 'boxes'
 
+type ShopScreenProps = {
+  embedded?: boolean
+  onBack?: () => void
+}
+
 // ── Shop screen ───────────────────────────────────────────────
 
-export function ShopScreen() {
-  const navigate = useNavigate()
+export function ShopView({ embedded = false, onBack }: Required<ShopScreenProps>) {
   const [tab, setTab] = useState<Tab>('weapons')
   const wallet = usePlayerStore((s) => s.wallet)
 
   return (
-    <div style={{ minHeight: '100dvh', background: C.bg, fontFamily: FONT, display: 'flex', flexDirection: 'column', color: '#fff' }}>
+    <div
+      style={{
+        minHeight: embedded ? '100dvh' : '100dvh',
+        width: embedded ? '100vw' : undefined,
+        height: embedded ? '100dvh' : undefined,
+        background: C.bg,
+        fontFamily: FONT,
+        display: 'flex',
+        flexDirection: 'column',
+        color: '#fff',
+        position: 'relative',
+      }}
+    >
       {/* Header */}
       <header style={{ padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 12, borderBottom: `1px solid ${C.border}` }}>
-        <button onClick={() => navigate('/home')} style={{ background: 'none', border: 'none', color: C.gold, cursor: 'pointer', fontSize: 20, padding: 0, fontFamily: FONT }}>←</button>
+        <button onClick={onBack} style={{ background: 'none', border: 'none', color: C.gold, cursor: 'pointer', fontSize: 20, padding: 0, fontFamily: FONT }}>← Volver</button>
         <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700 }}>Tienda</h1>
         <span style={{ marginLeft: 'auto', color: C.gold, fontSize: 15, fontWeight: 600 }}>
           🪙 {(wallet?.currentCoins ?? 0).toLocaleString()}
@@ -43,6 +59,13 @@ export function ShopScreen() {
       </div>
     </div>
   )
+}
+
+export function ShopScreen({ embedded = false, onBack }: ShopScreenProps) {
+  const navigate = useNavigate()
+  const handleBack = onBack ?? (() => navigate('/home'))
+
+  return <ShopView embedded={embedded} onBack={handleBack} />
 }
 
 // ── Internal components ───────────────────────────────────────

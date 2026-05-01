@@ -8,6 +8,7 @@ import { EventBus } from '../game/EventBus'
 type GameState = {
   isPaused: boolean
   isRunActive: boolean
+  isShopOpen: boolean
   runScore: number
   runCoins: number
   runCombo: ComboState | null
@@ -28,6 +29,8 @@ type GameActions = {
 
   // Llamado cuando Phaser inicia la pausa (evita reemisión circular)
   showPauseMenu: () => void
+  openShop: () => void
+  closeShop: () => void
 
   // Actualizaciones desde Phaser → React (vía EventBus handlers en GameScreen)
   updateRunScore: (score: number, coins: number) => void
@@ -49,6 +52,7 @@ type GameActions = {
 export const useGameStore = create<GameState & GameActions>((set) => ({
   isPaused: false,
   isRunActive: false,
+  isShopOpen: false,
   runScore: 0,
   runCoins: 0,
   runCombo: null,
@@ -61,22 +65,26 @@ export const useGameStore = create<GameState & GameActions>((set) => ({
   quality: 'high',
 
   startRun: () => {
-    set({ isRunActive: true, isPaused: false, runScore: 0, runCoins: 0, runCombo: null, lastRunResult: null, lastSubmitResult: null })
+    set({ isRunActive: true, isPaused: false, isShopOpen: false, runScore: 0, runCoins: 0, runCombo: null, lastRunResult: null, lastSubmitResult: null })
     EventBus.emit('RUN_STARTED')
   },
 
   // Pausa iniciada por React (botón HUD) → Phaser debe pausar
   pauseRun: () => {
-    set({ isPaused: true })
+    set({ isPaused: true, isShopOpen: false })
     EventBus.emit('RUN_PAUSED')
   },
 
   // Pausa iniciada por Phaser (OPEN_PAUSE_MENU) → solo actualiza UI sin reemitir
-  showPauseMenu: () => set({ isPaused: true }),
+  showPauseMenu: () => set({ isPaused: true, isShopOpen: false }),
+
+  openShop: () => set({ isPaused: true, isShopOpen: true }),
+
+  closeShop: () => set({ isShopOpen: false }),
 
   // Reanudar desde React → Phaser debe reanudar
   resumeRun: () => {
-    set({ isPaused: false })
+    set({ isPaused: false, isShopOpen: false })
     EventBus.emit('RUN_RESUMED')
   },
 
@@ -85,7 +93,7 @@ export const useGameStore = create<GameState & GameActions>((set) => ({
   updateCombo: (combo) => set({ runCombo: combo }),
 
   endRun: async (result) => {
-    set({ isRunActive: false, isPaused: false, lastRunResult: result, isSubmitting: true })
+    set({ isRunActive: false, isPaused: false, isShopOpen: false, lastRunResult: result, isSubmitting: true })
 
     const submitResult = await submitRun(result)
     set({ lastSubmitResult: submitResult, isSubmitting: false })

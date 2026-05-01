@@ -129,6 +129,7 @@ export type GameEventMap = {
   RUN_RESUMED: undefined
   RUN_ENDED: RunResult
   OPEN_PAUSE_MENU: undefined
+  OPEN_SHOP: undefined
   EXIT_TO_HOME: undefined
   TOGGLE_MUSIC: boolean
   TOGGLE_SFX: boolean

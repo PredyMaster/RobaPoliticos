@@ -1,4 +1,5 @@
-import { useRef, useEffect, useCallback } from "react"
+import { useRef, useEffect, useCallback, useState } from "react"
+import { createPortal } from "react-dom"
 import { useNavigate } from "react-router-dom"
 import { useGameStore } from "../store/useGameStore"
 import { useInventoryStore } from "../store/useInventoryStore"
@@ -8,6 +9,7 @@ import * as Phaser from "phaser"
 import { createGame } from "../game/PhaserGame"
 import type { ComboState, RunResult } from "../game/types/game"
 import { C, FONT } from "./shared/theme"
+import { ShopScreen } from "./ShopScreen"
 
 // ── HUD ──────────────────────────────────────────────────────
 
@@ -281,18 +283,32 @@ const BG_URLS = [
   "/assets/backgrounds/bg8.jpg",
 ]
 
+type ShopDebugState = {
+  count: number
+  lastSource: string
+  lastAt: string
+}
+
+type ShopBridgeWindow = Window & {
+  __openShopOverlay?: (source?: string) => void
+}
+
 export function GameScreen() {
   const navigate = useNavigate()
   const containerRef = useRef<HTMLDivElement>(null)
   const gameRef = useRef<Phaser.Game | null>(null)
   const bgImgRef = useRef<HTMLImageElement>(null)
+  const [shopOverlayOpen, setShopOverlayOpen] = useState(false)
+  const [shopDebug, setShopDebug] = useState<ShopDebugState | null>(null)
 
   // ── Stores ────────────────────────────────────────────────
   const isRunActive = useGameStore((s) => s.isRunActive)
   const isPaused = useGameStore((s) => s.isPaused)
+  const isShopOpen = useGameStore((s) => s.isShopOpen)
   const startRun = useGameStore((s) => s.startRun)
   const pauseRun = useGameStore((s) => s.pauseRun)
   const resumeRun = useGameStore((s) => s.resumeRun)
+  const closeShop = useGameStore((s) => s.closeShop)
   const showPauseMenu = useGameStore((s) => s.showPauseMenu)
   const updateRunScore = useGameStore((s) => s.updateRunScore)
   const updateCombo = useGameStore((s) => s.updateCombo)
@@ -304,11 +320,39 @@ export function GameScreen() {
 
   const equipment = useInventoryStore((s) => s.equipment)
   const profile = usePlayerStore((s) => s.profile)
+  const isShopVisible = isShopOpen || shopOverlayOpen
+
+  useEffect(() => {
+    if (!isShopVisible) return
+    setShopDebug((prev) => ({
+      count: (prev?.count ?? 0) + 1,
+      lastSource: "render_shop_overlay",
+      lastAt: new Date().toLocaleTimeString("es-ES"),
+    }))
+  }, [isShopVisible])
 
   // Fuerza el fondo del body al inicial nada más montar (sobrescribe cualquier caché de index.html)
   useEffect(() => {
     document.body.style.background = `#1a1a2e url('${BG_URLS[0]}') center center / cover no-repeat`
     return () => { document.body.style.background = "" }
+  }, [])
+
+  useEffect(() => {
+    const bridgeWindow = window as ShopBridgeWindow
+    bridgeWindow.__openShopOverlay = (source = "window_bridge") => {
+      setShopOverlayOpen(true)
+      setShopDebug((prev) => ({
+        count: (prev?.count ?? 0) + 1,
+        lastSource: source,
+        lastAt: new Date().toLocaleTimeString("es-ES"),
+      }))
+    }
+
+    return () => {
+      if (bridgeWindow.__openShopOverlay) {
+        delete bridgeWindow.__openShopOverlay
+      }
+    }
   }, [])
 
   // ── Phaser bootstrap ──────────────────────────────────────
@@ -340,6 +384,12 @@ export function GameScreen() {
     navigate("/home")
   }, [navigate])
 
+  const handleCloseShop = useCallback(() => {
+    setShopOverlayOpen(false)
+    closeShop()
+    resumeRun()
+  }, [closeShop, resumeRun])
+
   // ── Bridge Phaser → React ─────────────────────────────────
   useEffect(() => {
     const onScoreUpdated = (data: { runScore: number; totalCoins: number }) => {
@@ -352,6 +402,8 @@ export function GameScreen() {
 
     // Phaser señala fin de partida → guardamos y navegamos
     const onRunEnded = (result: RunResult) => {
+      setShopOverlayOpen(false)
+      closeShop()
       endRun(result) // fire-and-forget; EndRunScreen muestra "Guardando…" mientras isSubmitting=true
       navigate("/end-run", { replace: true })
     }
@@ -359,6 +411,14 @@ export function GameScreen() {
     // Phaser quiere mostrar el menú de pausa (p.ej. botón físico Android)
     const onOpenPauseMenu = () => {
       showPauseMenu()
+    }
+
+    const onOpenShop = () => {
+      ;(window as ShopBridgeWindow).__openShopOverlay?.("eventbus_OPEN_SHOP")
+    }
+
+    const onBrowserOpenShop = () => {
+      ;(window as ShopBridgeWindow).__openShopOverlay?.("window_rp:open-shop")
     }
 
     // Phaser pide salir al home (p.ej. tiempo agotado + timeout de gracia)
@@ -376,18 +436,22 @@ export function GameScreen() {
     EventBus.on("COMBO_UPDATED", onComboUpdated)
     EventBus.on("RUN_ENDED", onRunEnded)
     EventBus.on("OPEN_PAUSE_MENU", onOpenPauseMenu)
+    EventBus.on("OPEN_SHOP", onOpenShop)
     EventBus.on("EXIT_TO_HOME", onPhaserExitToHome)
     EventBus.on("BG_CHANGED", onBgChanged)
+    window.addEventListener("rp:open-shop", onBrowserOpenShop)
 
     return () => {
       EventBus.off("RUN_SCORE_UPDATED", onScoreUpdated)
       EventBus.off("COMBO_UPDATED", onComboUpdated)
       EventBus.off("RUN_ENDED", onRunEnded)
       EventBus.off("OPEN_PAUSE_MENU", onOpenPauseMenu)
+      EventBus.off("OPEN_SHOP", onOpenShop)
       EventBus.off("EXIT_TO_HOME", onPhaserExitToHome)
       EventBus.off("BG_CHANGED", onBgChanged)
+      window.removeEventListener("rp:open-shop", onBrowserOpenShop)
     }
-  }, [updateRunScore, updateCombo, endRun, showPauseMenu, navigate])
+  }, [updateRunScore, updateCombo, closeShop, endRun, showPauseMenu, navigate])
 
   return (
     <div
@@ -476,7 +540,58 @@ export function GameScreen() {
 
       {isRunActive && <GameHUD onPause={pauseRun} />}
 
-      {isPaused && <PauseOverlay onResume={resumeRun} onExit={handleExit} />}
+      {isPaused && !isShopVisible && (
+        <PauseOverlay onResume={resumeRun} onExit={handleExit} />
+      )}
+
+      {isShopVisible &&
+        createPortal(
+          <div
+            style={{
+              position: "fixed",
+              inset: 0,
+              zIndex: 1000,
+              background: C.bg,
+            }}
+          >
+            <ShopScreen embedded onBack={handleCloseShop} />
+          </div>,
+          document.body,
+        )}
+
+      {shopDebug &&
+        createPortal(
+          <div
+            style={{
+              position: "fixed",
+              top: 12,
+              left: 12,
+              zIndex: 2200,
+              background: "rgba(190, 24, 93, 0.96)",
+              color: "#fff",
+              border: "2px solid #fecdd3",
+              borderRadius: 12,
+              padding: "10px 12px",
+              fontFamily: FONT,
+              fontSize: 13,
+              lineHeight: 1.35,
+              boxShadow: "0 12px 40px rgba(0,0,0,0.35)",
+              pointerEvents: "none",
+              maxWidth: 340,
+            }}
+          >
+            <strong style={{ display: "block", marginBottom: 4 }}>
+              Diagnostico Tienda React
+            </strong>
+            <div>ultimo evento: {shopDebug.lastSource}</div>
+            <div>hora: {shopDebug.lastAt}</div>
+            <div>contador: {shopDebug.count}</div>
+            <div>isShopOpen store: {String(isShopOpen)}</div>
+            <div>shopOverlayOpen local: {String(shopOverlayOpen)}</div>
+            <div>isShopVisible final: {String(isShopVisible)}</div>
+          </div>,
+          document.body,
+        )}
     </div>
   )
 }
