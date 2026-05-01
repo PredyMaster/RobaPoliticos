@@ -13,7 +13,7 @@ export function buildGameConfig(parent: HTMLElement): Phaser.Types.Core.GameConf
     backgroundColor: '#1a1a2e',
     antialias: true,
     scale: {
-      mode: Phaser.Scale.FIT,
+      mode: Phaser.Scale.ENVELOP,
       autoCenter: Phaser.Scale.CENTER_BOTH,
       width: 1920,
       height: 1080,

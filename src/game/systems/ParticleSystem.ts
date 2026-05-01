@@ -27,11 +27,13 @@ export class ParticleSystem {
     this.maxCount = QUALITY_COUNT[quality]
     this.createEmitters()
     this.createFeverOverlay()
+    this.scene.scale.on(Phaser.Scale.Events.RESIZE, this.handleResize, this)
 
     scene.events.on('player:hit',  this.onPlayerHit,  this)
     scene.events.on('coin:caught', this.onCoinCaught, this)
     scene.events.on('fever:start', this.onFeverStart, this)
     scene.events.on('fever:end',   this.onFeverEnd,   this)
+    this.handleResize()
   }
 
   private createEmitters(): void {
@@ -91,7 +93,14 @@ export class ParticleSystem {
     })
   }
 
+  private handleResize(): void {
+    const viewport = this.scene.scale.getViewPort(this.scene.cameras.main)
+    this.feverOverlay.setPosition(viewport.centerX, viewport.centerY)
+    this.feverOverlay.setSize(viewport.width, viewport.height)
+  }
+
   destroy(): void {
+    this.scene.scale.off(Phaser.Scale.Events.RESIZE, this.handleResize, this)
     this.scene.events.off('player:hit',  this.onPlayerHit,  this)
     this.scene.events.off('coin:caught', this.onCoinCaught, this)
     this.scene.events.off('fever:start', this.onFeverStart, this)

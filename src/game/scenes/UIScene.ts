@@ -36,11 +36,14 @@ export class UIScene extends Phaser.Scene {
 
   private timerBg!: Phaser.GameObjects.Graphics
   private timerText!: Phaser.GameObjects.Text
+  private panelX = COIN_BG_X
+  private panelY = COIN_BG_Y
   private timerBgY = 0
   private timeRemaining = gameTime
   private timerActive = false
   private runStarted = false
   private currentCoins = 0
+  private comboBaseY = 300
   private shopButton!: Phaser.GameObjects.Container
   private shopButtonHitArea!: Phaser.GameObjects.Zone
 
@@ -125,6 +128,7 @@ export class UIScene extends Phaser.Scene {
     this.sfxEnabled = (this.registry.get("sfxEnabled") as boolean) ?? true
 
     this.createAudioButtons()
+    this.scale.on(Phaser.Scale.Events.RESIZE, this.handleResize, this)
 
     EventBus.on("COMBO_UPDATED", this.onComboUpdated, this)
     EventBus.on("RUN_SCORE_UPDATED", this.onScoreUpdated, this)
@@ -137,6 +141,7 @@ export class UIScene extends Phaser.Scene {
     this.timerActive = !isPaused
     this.setShopButtonEnabled(!isPaused)
     if (isPaused) this.onRunPaused()
+    this.handleResize()
   }
 
   update(_time: number, delta: number): void {
@@ -179,7 +184,7 @@ export class UIScene extends Phaser.Scene {
     const h = this.timerText.height + COIN_PAD_Y * 2
     this.timerBg.clear()
     this.timerBg.fillStyle(0x000000, 0.55)
-    this.timerBg.fillRoundedRect(COIN_BG_X, this.timerBgY, w, h, 14)
+    this.timerBg.fillRoundedRect(this.panelX, this.timerBgY, w, h, 14)
   }
 
   private onTimeUp(): void {
@@ -356,7 +361,7 @@ export class UIScene extends Phaser.Scene {
     const h = this.coinCounter.height + COIN_PAD_Y * 2
     this.coinBg.clear()
     this.coinBg.fillStyle(0x000000, 0.55)
-    this.coinBg.fillRoundedRect(COIN_BG_X, COIN_BG_Y, w, h, 14)
+    this.coinBg.fillRoundedRect(this.panelX, this.panelY, w, h, 14)
   }
 
   private onComboUpdated(combo: ComboState): void {
@@ -369,16 +374,63 @@ export class UIScene extends Phaser.Scene {
     this.tweens.add({
       targets: this.comboFlash,
       alpha: 0,
-      y: 240,
+      y: this.comboBaseY - 60,
       duration: 900,
       ease: "Power2",
       onComplete: () => {
-        this.comboFlash.setY(300)
+        this.comboFlash.setY(this.comboBaseY)
       },
     })
   }
 
+  private handleResize(): void {
+    const viewport = this.scale.getViewPort(this.cameras.main)
+    const left = viewport.x
+    const right = viewport.right
+    const top = viewport.y
+
+    this.panelX = left + COIN_BG_X
+    this.panelY = top + COIN_BG_Y
+    const textX = this.panelX + COIN_PAD_X + COIN_SLOT_W + COIN_GAP
+
+    this.coinCounter.setPosition(textX, this.panelY + COIN_PAD_Y)
+    this.coinIcon.setPosition(
+      this.panelX + COIN_PAD_X + COIN_SLOT_W / 2,
+      this.panelY + COIN_PAD_Y + this.coinCounter.height / 2,
+    )
+
+    this.timerBgY =
+      this.panelY + this.coinCounter.height + COIN_PAD_Y * 2 + TIMER_GAP
+    this.timerText.setPosition(
+      this.panelX + COIN_PAD_X,
+      this.timerBgY + COIN_PAD_Y,
+    )
+
+    const buttonY =
+      this.timerBgY + this.timerText.height + COIN_PAD_Y * 2 + SHOP_BTN_GAP
+    this.shopButton.setPosition(this.panelX, buttonY)
+    this.shopButtonHitArea.setPosition(
+      this.panelX + SHOP_BTN_W / 2,
+      buttonY + SHOP_BTN_H / 2,
+    )
+
+    const buttonX = right - (MARGIN - 90) - BTN_W / 2
+    const y1 = top + MARGIN + BTN_H / 2
+    const y2 = y1 + BTN_H + 30
+    const y3 = y2 + BTN_H + 30
+
+    this.musicBtn.setPosition(buttonX, y1)
+    this.sfxBtn.setPosition(buttonX, y2)
+    this.bgArrowBtn.setPosition(buttonX, y3)
+    this.comboBaseY = top + 300
+    this.comboFlash.setPosition(viewport.centerX, this.comboBaseY)
+
+    this.resizeBg()
+    this.resizeTimerBg()
+  }
+
   shutdown(): void {
+    this.scale.off(Phaser.Scale.Events.RESIZE, this.handleResize, this)
     EventBus.off("COMBO_UPDATED", this.onComboUpdated, this)
     EventBus.off("RUN_SCORE_UPDATED", this.onScoreUpdated, this)
     EventBus.off("RUN_STARTED", this.onRunStarted, this)

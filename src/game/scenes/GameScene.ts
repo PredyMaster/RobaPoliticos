@@ -76,6 +76,7 @@ export class GameScene extends Phaser.Scene {
     this.isRunning = false
     this.isPaused = false
     this.buildStaticBackground()
+    this.scale.on(Phaser.Scale.Events.RESIZE, this.handleResize, this)
 
     const weaponId =
       (this.registry.get("equippedWeaponId") as string) || "hand_basic"
@@ -91,6 +92,7 @@ export class GameScene extends Phaser.Scene {
     this.registerEventBusListeners()
     this.input.on("pointerdown", this.onPointerDown, this)
     this.audio.playMusic()
+    this.handleResize()
     EventBus.emit("GAME_READY")
   }
 
@@ -103,9 +105,24 @@ export class GameScene extends Phaser.Scene {
       .setDisplaySize(SCENE_W, SCENE_H)
   }
 
+  private handleResize(): void {
+    const viewport = this.scale.getViewPort(this.cameras.main)
+    const centerX = viewport.centerX
+    const centerY = viewport.centerY
+    const frame = this.bgImage.frame
+    const scale = Math.max(
+      viewport.width / frame.width,
+      viewport.height / frame.height,
+    )
+
+    this.bgImage.setPosition(centerX, centerY)
+    this.bgImage.setScale(scale)
+  }
+
   private onChangeBg(): void {
     this.bgIndex = (this.bgIndex + 1) % BG_KEYS.length
     this.bgImage.setTexture(BG_KEYS[this.bgIndex])
+    this.handleResize()
     EventBus.emit("BG_CHANGED", this.bgIndex)
   }
 
@@ -282,6 +299,7 @@ export class GameScene extends Phaser.Scene {
   // ── Lifecycle ─────────────────────────────────────────────
 
   shutdown(): void {
+    this.scale.off(Phaser.Scale.Events.RESIZE, this.handleResize, this)
     EventBus.off("RUN_STARTED", this.onRunStarted, this)
     EventBus.off("RUN_PAUSED", this.onRunPaused, this)
     EventBus.off("RUN_RESUMED", this.onRunResumed, this)

@@ -71,8 +71,8 @@ export function StandaloneGame() {
   return (
     <div
       style={{
-        width: "100%",
-        height: "100%",
+        width: "100vw",
+        height: "100dvh",
         background: "#1a1a2e",
         position: "relative",
         overflow: "hidden",

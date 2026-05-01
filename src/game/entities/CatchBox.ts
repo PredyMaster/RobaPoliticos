@@ -61,8 +61,9 @@ export class CatchBox extends Phaser.GameObjects.Image {
 
     this.x += this.vx * dt
 
-    const minX = this.cfg.width / 2 + SAFE_MARGIN
-    const maxX = SCENE_W - this.cfg.width / 2 - SAFE_MARGIN
+    const viewport = this.scene.scale.getViewPort(this.scene.cameras.main)
+    const minX = viewport.x + this.cfg.width / 2 + SAFE_MARGIN
+    const maxX = viewport.right - this.cfg.width / 2 - SAFE_MARGIN
     if (this.x <= minX) {
       this.x = minX
       this.dir = 1
