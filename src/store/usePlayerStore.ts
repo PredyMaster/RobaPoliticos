@@ -1,13 +1,13 @@
 import { create } from 'zustand'
 import type { Profile, AuthSession, PlayerPreferences } from '../game/types/player'
 import type { Wallet } from '../game/types/economy'
-import { getProfile } from '../services/supabase/profile'
-import { getWallet } from '../services/supabase/wallet'
-import { getSession, signOut } from '../services/supabase/auth'
+import { getProfile } from '../services/local/profile'
+import { getWallet } from '../services/local/wallet'
 import { DEFAULT_PREFERENCES } from '../game/types/player'
+import { LOCAL_SESSION, resetLocalData } from '../services/local/storage'
 
 type PlayerState = {
-  // Auth
+  // Jugador local
   session: AuthSession | null
   isLoadingSession: boolean
 
@@ -24,7 +24,7 @@ type PlayerState = {
 }
 
 type PlayerActions = {
-  // Carga sesión activa y luego perfil + wallet
+  // Carga progreso local y luego perfil + wallet
   loadPlayer: () => Promise<void>
 
   // Refresca solo la wallet (tras compras, partidas, etc.)
@@ -36,8 +36,8 @@ type PlayerActions = {
   // Actualiza preferencias y las persiste en localStorage
   setPreferences: (partial: Partial<PlayerPreferences>) => void
 
-  // Limpia todo el estado (logout)
-  logout: () => Promise<void>
+  // Reinicia el progreso local
+  resetProgress: () => Promise<void>
 }
 
 const PREFS_KEY = 'rp_preferences'
@@ -72,22 +72,12 @@ export const usePlayerStore = create<PlayerState & PlayerActions>((set, get) => 
   loadPlayer: async () => {
     set({ isLoadingPlayer: true, loadError: null })
 
-    const session = await getSession()
-    if (!session) {
-      set({ session: null, isLoadingSession: false, isLoadingPlayer: false })
-      return
-    }
-
-    const authSession: AuthSession = {
-      userId: session.user.id,
-      email: session.user.email ?? '',
-      accessToken: session.access_token,
-    }
+    const authSession: AuthSession = { ...LOCAL_SESSION }
     set({ session: authSession, isLoadingSession: false })
 
     const [profileResult, walletResult] = await Promise.all([
-      getProfile(session.user.id),
-      getWallet(session.user.id),
+      getProfile(authSession.userId),
+      getWallet(authSession.userId),
     ])
 
     if (profileResult.error || walletResult.error) {
@@ -121,13 +111,15 @@ export const usePlayerStore = create<PlayerState & PlayerActions>((set, get) => 
     set({ preferences: next })
   },
 
-  logout: async () => {
-    await signOut()
+  resetProgress: async () => {
+    const reset = resetLocalData()
     set({
-      session: null,
-      profile: null,
-      wallet: null,
+      session: { ...LOCAL_SESSION },
+      profile: reset.profile,
+      wallet: reset.wallet,
       loadError: null,
+      isLoadingSession: false,
+      isLoadingPlayer: false,
     })
   },
 }))

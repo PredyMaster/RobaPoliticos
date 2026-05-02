@@ -903,22 +903,16 @@ function formatCoins(value: number): string {
 }
 
 function formatPurchaseError(error: string, category: ShopItemType): string {
-  if (error === 'invalid_item_type' && category === 'hand') {
-    return 'El backend todavia no acepta manos como categoria de compra.'
-  }
+  if (error === 'invalid_item_type' && category === 'hand') return 'Ese item no se puede comprar.'
   if (error === 'already_owned') return 'Ya tienes este item.'
   if (error === 'level_too_low') return 'Tu nivel actual no permite comprarlo.'
   if (error === 'insufficient_coins') return 'No tienes monedas suficientes.'
-  if (error === 'item_not_found') return 'Ese item no existe en el catalogo remoto.'
-  if (error === 'not_authenticated') return 'Necesitas iniciar sesion para comprar.'
+  if (error === 'item_not_found') return 'Ese item no existe en el catálogo.'
   return 'No se pudo completar la compra.'
 }
 
 function formatEquipError(error: string, category: ShopItemType): string {
-  if (error === 'invalid_item_type' && category === 'hand') {
-    return 'El backend todavia no acepta manos como categoria equipable.'
-  }
-  if (error === 'not_authenticated') return 'Necesitas iniciar sesion para equipar.'
+  if (error === 'invalid_item_type' && category === 'hand') return 'Ese item no se puede equipar.'
   if (error === 'not_owned') return 'Primero tienes que comprar este item.'
   return 'No se pudo equipar el item.'
 }

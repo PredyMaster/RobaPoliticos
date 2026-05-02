@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { useGameStore } from '../store/useGameStore'
 import { usePlayerStore } from '../store/usePlayerStore'
+import { useInventoryStore } from '../store/useInventoryStore'
 import type { GraphicsQuality } from '../game/types/game'
 import { C, FONT, cardStyle } from './shared/theme'
 
@@ -18,7 +19,8 @@ export function SettingsScreen() {
 
   const language         = usePlayerStore((s) => s.preferences.language)
   const setPreferences   = usePlayerStore((s) => s.setPreferences)
-  const logout           = usePlayerStore((s) => s.logout)
+  const resetProgress    = usePlayerStore((s) => s.resetProgress)
+  const loadInventory    = useInventoryStore((s) => s.loadInventory)
 
   const QUALITY_OPTS: GraphicsQuality[] = ['low', 'medium', 'high']
   const QUALITY_LABELS: Record<GraphicsQuality, string> = { low: 'Baja', medium: 'Media', high: 'Alta' }
@@ -28,9 +30,14 @@ export function SettingsScreen() {
     { code: 'en', label: 'English' },
   ]
 
-  async function handleLogout() {
-    await logout()
-    navigate('/login', { replace: true })
+  async function handleResetProgress() {
+    const confirmed = window.confirm('Esto borrará tu progreso local y no se podrá deshacer. ¿Quieres continuar?')
+    if (!confirmed) return
+
+    await resetProgress()
+    const nextSession = usePlayerStore.getState().session
+    if (nextSession) await loadInventory(nextSession.userId)
+    navigate('/home', { replace: true })
   }
 
   return (
@@ -106,10 +113,10 @@ export function SettingsScreen() {
           </div>
         </Section>
 
-        {/* Cuenta */}
-        <Section title="Cuenta">
+        {/* Datos locales */}
+        <Section title="Datos locales">
           <button
-            onClick={handleLogout}
+            onClick={handleResetProgress}
             style={{
               width: '100%',
               padding: '13px',
@@ -122,7 +129,7 @@ export function SettingsScreen() {
               fontFamily: FONT,
             }}
           >
-            Cerrar sesión
+            Reiniciar progreso local
           </button>
         </Section>
 

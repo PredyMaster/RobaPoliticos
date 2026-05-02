@@ -47,35 +47,18 @@ export type SubmitRunResult =
   | { ok: false; error: SubmitRunError; runSaved?: boolean }
 
 export type SubmitRunError =
-  | 'not_authenticated'
   | 'invalid_values'
   | 'weapon_not_owned'
   | 'box_not_owned'
   | 'suspicious_run'
 
-// ── Sesión / Auth ────────────────────────────────────────────
+// ── Jugador local ────────────────────────────────────────────
 
 export type AuthSession = {
   userId: string
   email: string
   accessToken: string
 }
-
-export type SignUpPayload = {
-  email: string
-  password: string
-  username: string
-  avatarUrl?: string
-}
-
-export type SignInPayload = {
-  email: string
-  password: string
-}
-
-export type AuthResult =
-  | { ok: true; session: AuthSession }
-  | { ok: false; error: string }
 
 // ── Config de jugador (preferencias) ────────────────────────
 

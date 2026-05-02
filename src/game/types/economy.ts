@@ -38,7 +38,6 @@ export type PurchaseResult =
   | { ok: false; error: PurchaseError; requiredLevel?: number; needed?: number; have?: number }
 
 export type PurchaseError =
-  | 'not_authenticated'
   | 'invalid_item_type'
   | 'item_not_found'
   | 'already_owned'
@@ -50,7 +49,6 @@ export type EquipResult =
   | { ok: false; error: EquipError }
 
 export type EquipError =
-  | 'not_authenticated'
   | 'invalid_item_type'
   | 'not_owned'
 
@@ -109,7 +107,6 @@ export type ClaimMissionResult =
   | { ok: false; error: ClaimMissionError }
 
 export type ClaimMissionError =
-  | 'not_authenticated'
   | 'mission_not_found'
   | 'not_completed'
   | 'already_claimed'

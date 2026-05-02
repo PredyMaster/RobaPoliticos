@@ -7,7 +7,7 @@ import type {
   ShopItemType,
 } from '../game/types/economy'
 import type { BoxItem, HandItem, Weapon } from '../game/types/game'
-import { getInventory, getEquipment, purchaseItem, equipItem } from '../services/supabase/inventory'
+import { getInventory, getEquipment, purchaseItem, equipItem } from '../services/local/inventory'
 import { getBox } from '../game/data/boxes'
 import { getHand } from '../game/data/hands'
 import { getWeapon } from '../game/data/weapons'
@@ -21,10 +21,10 @@ type InventoryState = {
 }
 
 type InventoryActions = {
-  // Carga inventario + equipamiento del jugador desde BD
+  // Carga inventario + equipamiento del jugador desde localStorage
   loadInventory: (userId: string) => Promise<void>
 
-  // Compra un item: descuenta monedas en BD y actualiza estado local
+  // Compra un item y sincroniza estado local
   purchase: (itemType: ShopItemType, itemId: string) => Promise<PurchaseResult>
 
   // Equipa un item del inventario y actualiza estado local
@@ -67,17 +67,21 @@ export const useInventoryStore = create<InventoryState & InventoryActions>((set,
     const result = await purchaseItem(itemType, itemId)
 
     if (result.ok) {
-      // Añadir al inventario local de forma optimista
-      const newItem: InventoryItem = {
-        id: crypto.randomUUID(),
-        userId: usePlayerStore.getState().session?.userId ?? '',
-        itemType,
-        itemId,
-        purchasedAt: new Date().toISOString(),
-      }
-      set((state) => ({ items: [...state.items, newItem] }))
+      const { session } = usePlayerStore.getState()
+      if (session) {
+        const [inventoryResult, equipmentResult] = await Promise.all([
+          getInventory(session.userId),
+          getEquipment(session.userId),
+        ])
 
-      // Refrescar wallet (las monedas ya fueron descontadas en BD)
+        if (!inventoryResult.error && !equipmentResult.error) {
+          set({
+            items: inventoryResult.data,
+            equipment: equipmentResult.data,
+          })
+        }
+      }
+
       await usePlayerStore.getState().refreshWallet()
     }
 
@@ -88,21 +92,11 @@ export const useInventoryStore = create<InventoryState & InventoryActions>((set,
     const result = await equipItem(itemType, itemId)
 
     if (result.ok) {
-      // Actualizar equipamiento local de forma optimista
-      set((state) => {
-        if (!state.equipment) return state
-        return {
-          equipment: {
-            ...state.equipment,
-            ...(itemType === 'weapon'
-              ? { equippedWeaponId: itemId }
-              : itemType === 'hand'
-                ? { equippedHandId: itemId }
-                : { equippedBoxId: itemId }),
-            updatedAt: new Date().toISOString(),
-          },
-        }
-      })
+      const { session } = usePlayerStore.getState()
+      if (session) {
+        const { data, error } = await getEquipment(session.userId)
+        if (!error) set({ equipment: data })
+      }
     }
 
     return result

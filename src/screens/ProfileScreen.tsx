@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { usePlayerStore } from '../store/usePlayerStore'
-import { getRunHistory } from '../services/supabase/runs'
+import { useInventoryStore } from '../store/useInventoryStore'
+import { getRunHistory } from '../services/local/runs'
 import { C, FONT, cardStyle } from './shared/theme'
 
 type RunRow = {
@@ -19,7 +20,8 @@ export function ProfileScreen() {
   const profile      = usePlayerStore((s) => s.profile)
   const wallet       = usePlayerStore((s) => s.wallet)
   const session      = usePlayerStore((s) => s.session)
-  const logout       = usePlayerStore((s) => s.logout)
+  const resetProgress = usePlayerStore((s) => s.resetProgress)
+  const loadInventory = useInventoryStore((s) => s.loadInventory)
 
   const [runs, setRuns]       = useState<RunRow[]>([])
   const [loadingRuns, setLR]  = useState(true)
@@ -32,9 +34,16 @@ export function ProfileScreen() {
     })
   }, [session])
 
-  async function handleLogout() {
-    await logout()
-    navigate('/login', { replace: true })
+  async function handleResetProgress() {
+    const confirmed = window.confirm('Esto borrará tu progreso local, inventario y partidas guardadas. ¿Quieres continuar?')
+    if (!confirmed) return
+
+    await resetProgress()
+    const nextSession = usePlayerStore.getState().session
+    if (nextSession) await loadInventory(nextSession.userId)
+    setRuns([])
+    setLR(false)
+    navigate('/home', { replace: true })
   }
 
   return (
@@ -90,9 +99,8 @@ export function ProfileScreen() {
           )}
         </div>
 
-        {/* Actions */}
         <button
-          onClick={handleLogout}
+          onClick={handleResetProgress}
           style={{
             marginTop: 8,
             padding: '13px',
@@ -105,7 +113,7 @@ export function ProfileScreen() {
             fontFamily: FONT,
           }}
         >
-          Cerrar sesión
+          Reiniciar progreso local
         </button>
       </div>
     </div>

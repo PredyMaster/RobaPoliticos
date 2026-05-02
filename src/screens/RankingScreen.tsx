@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { usePlayerStore } from "../store/usePlayerStore"
-import { getLeaderboard } from "../services/supabase/leaderboard"
+import { getLeaderboard } from "../services/local/leaderboard"
 import type { LeaderboardEntry, RankingType } from "../game/types/player"
 import { C, FONT, cardStyle } from "./shared/theme"
 

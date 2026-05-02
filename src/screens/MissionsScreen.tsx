@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { usePlayerStore } from '../store/usePlayerStore'
-import { getMissionsForUser, claimMissionReward } from '../services/supabase/missions'
+import { getMissionsForUser, claimMissionReward } from '../services/local/missions'
 import type { MissionWithProgress, MissionType } from '../game/types/economy'
 import { C, FONT, cardStyle } from './shared/theme'
 

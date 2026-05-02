@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import type { GraphicsQuality, RunResult, ComboState } from '../game/types/game'
 import type { SubmitRunResult } from '../game/types/player'
-import { submitRun } from '../services/supabase/runs'
+import { submitRun } from '../services/local/runs'
 import { usePlayerStore } from './usePlayerStore'
 import { EventBus } from '../game/EventBus'
 
@@ -36,7 +36,7 @@ type GameActions = {
   updateRunScore: (score: number, coins: number) => void
   updateCombo: (combo: ComboState) => void
 
-  // Finalizar partida: guarda localmente y envía a Supabase
+  // Finalizar partida: guarda y persiste el resultado localmente
   endRun: (result: RunResult) => Promise<void>
 
   // Preferencias rápidas (se sincronizan con usePlayerStore.setPreferences)

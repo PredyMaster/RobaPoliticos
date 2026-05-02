@@ -1,44 +1,48 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import type { ReactNode } from 'react'
-import { AuthProvider } from './AuthProvider'
-import { ProtectedRoute } from './ProtectedRoute'
-import { LoginScreen }    from '../screens/LoginScreen'
-import { HomeScreen }     from '../screens/HomeScreen'
-import { GameScreen }     from '../screens/GameScreen'
-import { ShopScreen }     from '../screens/ShopScreen'
-import { RankingScreen }  from '../screens/RankingScreen'
-import { ProfileScreen }  from '../screens/ProfileScreen'
+import { useEffect } from 'react'
+import { HomeScreen } from '../screens/HomeScreen'
+import { GameScreen } from '../screens/GameScreen'
+import { ShopScreen } from '../screens/ShopScreen'
+import { RankingScreen } from '../screens/RankingScreen'
+import { ProfileScreen } from '../screens/ProfileScreen'
 import { MissionsScreen } from '../screens/MissionsScreen'
 import { SettingsScreen } from '../screens/SettingsScreen'
-import { EndRunScreen }   from '../screens/EndRunScreen'
-
-function P({ children }: { children: ReactNode }) {
-  return <ProtectedRoute>{children}</ProtectedRoute>
-}
+import { EndRunScreen } from '../screens/EndRunScreen'
+import { LoadingScreen } from '../screens/LoadingScreen'
+import { usePlayerStore } from '../store/usePlayerStore'
+import { useGameStore } from '../store/useGameStore'
+import { useInventoryStore } from '../store/useInventoryStore'
 
 export default function App() {
+  const loadPlayer = usePlayerStore((s) => s.loadPlayer)
+  const isLoadingSession = usePlayerStore((s) => s.isLoadingSession)
+  const syncPreferences = useGameStore((s) => s.syncPreferences)
+  const loadInventory = useInventoryStore((s) => s.loadInventory)
+
+  useEffect(() => {
+    loadPlayer().then(() => {
+      syncPreferences()
+      const { session } = usePlayerStore.getState()
+      if (session) void loadInventory(session.userId)
+    })
+  }, [loadInventory, loadPlayer, syncPreferences])
+
+  if (isLoadingSession) return <LoadingScreen />
+
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <Routes>
-          {/* Pública */}
-          <Route path="/login"    element={<LoginScreen />} />
-
-          {/* Protegidas */}
-          <Route path="/home"     element={<P><HomeScreen /></P>} />
-          <Route path="/game"     element={<GameScreen />} />
-          <Route path="/shop"     element={<P><ShopScreen /></P>} />
-          <Route path="/ranking"  element={<P><RankingScreen /></P>} />
-          <Route path="/profile"  element={<P><ProfileScreen /></P>} />
-          <Route path="/missions" element={<P><MissionsScreen /></P>} />
-          <Route path="/settings" element={<P><SettingsScreen /></P>} />
-          <Route path="/end-run"  element={<EndRunScreen />} />
-
-          {/* Fallbacks */}
-          <Route path="/"  element={<Navigate to="/home" replace />} />
-          <Route path="*"  element={<Navigate to="/home" replace />} />
-        </Routes>
-      </AuthProvider>
+      <Routes>
+        <Route path="/home" element={<HomeScreen />} />
+        <Route path="/game" element={<GameScreen />} />
+        <Route path="/shop" element={<ShopScreen />} />
+        <Route path="/ranking" element={<RankingScreen />} />
+        <Route path="/profile" element={<ProfileScreen />} />
+        <Route path="/missions" element={<MissionsScreen />} />
+        <Route path="/settings" element={<SettingsScreen />} />
+        <Route path="/end-run" element={<EndRunScreen />} />
+        <Route path="/" element={<Navigate to="/home" replace />} />
+        <Route path="*" element={<Navigate to="/home" replace />} />
+      </Routes>
     </BrowserRouter>
   )
 }
