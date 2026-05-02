@@ -4,7 +4,7 @@ import type { Coin } from '../entities/Coin'
 import type { PlayerCharacter } from '../entities/PlayerCharacter'
 import type { CombatLoadout } from '../types/game'
 import { COIN_DEFINITIONS, COIN_MAP } from '../data/coins'
-import { pickCoinType, spreadAngle } from '../utils/random'
+import { pickCoinType, randomInt, spreadAngle } from '../utils/random'
 import type { SwipeHitEvent } from './SwipeSystem'
 
 type ComboInfo = { count: number; multiplier: number }
@@ -42,11 +42,10 @@ export class CoinSpawnSystem {
     if (!e.didHit) return
 
     const w = this.loadout
-    let count = w.attack
-    if (e.isCritical) {
-      count += Math.max(2, Math.round(w.attack * (w.criticalMultiplier - 1)))
-    }
-    if (this.combo.count >= 20) count = Math.ceil(count * 1.15) // fever bonus
+    let count = randomInt(w.minDrops, w.maxDrops)
+    if (e.isCritical) count += w.dropProgress >= 0.65 ? 2 : 1
+    if (this.combo.count >= 10) count += 1
+    if (this.combo.count >= 20) count += 1
 
     // Blend hit direction with downward based on strength:
     // weak hit (strength≈0) → coins fall below; strong hit (strength≈1) → fly in hit direction
@@ -64,13 +63,14 @@ export class CoinSpawnSystem {
     const sc    = Math.pow(e.strength, 1.5)
     const force = w.force * (0.12 + sc * 1.88)
 
-    // rarityBonus: escala con la fuerza del golpe y el combo actual
-    // Alcanza 1.0 sólo con combo >= 20 (fiebre) + golpe a máxima velocidad
     const comboFactor = Math.min(this.combo.count / 20, 1)
-    const rarityBonus = e.strength * comboFactor * (0.5 + w.rarityBonus * 0.5)
+    const rarityBonus = Math.min(
+      1,
+      w.rarityBonus + e.strength * 0.18 + comboFactor * 0.22 + (e.isCritical ? 0.12 : 0),
+    )
 
     for (let i = 0; i < count; i++) {
-      const type  = pickCoinType(COIN_DEFINITIONS, rarityBonus)
+      const type  = pickCoinType(COIN_DEFINITIONS, w.dropProgress, rarityBonus)
       const def   = COIN_MAP.get(type)
       const value = def?.value ?? 1
       const angle = spreadAngle(baseAngle, w.spread)

@@ -1,5 +1,7 @@
 import * as Phaser from "phaser"
 import { EventBus } from "../EventBus"
+import { useInventoryStore } from "../../store/useInventoryStore"
+import { usePlayerStore } from "../../store/usePlayerStore"
 
 export class GameOverScene extends Phaser.Scene {
   private overlay!: Phaser.GameObjects.Graphics
@@ -9,6 +11,7 @@ export class GameOverScene extends Phaser.Scene {
   private buttonBg!: Phaser.GameObjects.Graphics
   private buttonHitArea!: Phaser.GameObjects.Zone
   private coins = 0
+  private isRestarting = false
 
   constructor() {
     super({ key: "GameOverScene" })
@@ -56,13 +59,35 @@ export class GameOverScene extends Phaser.Scene {
       .setInteractive({ useHandCursor: true })
       .on("pointerover", () => this.renderButton(true))
       .on("pointerout", () => this.renderButton(false))
-      .on("pointerdown", () => this.onPlayAgain())
+      .on("pointerdown", () => void this.onPlayAgain())
 
     this.scale.on(Phaser.Scale.Events.RESIZE, this.handleResize, this)
     this.handleResize()
   }
 
-  private onPlayAgain(): void {
+  private async onPlayAgain(): Promise<void> {
+    if (this.isRestarting) return
+    this.isRestarting = true
+    this.buttonHitArea.disableInteractive()
+    this.buttonLabel.setText("Reiniciando...")
+    this.renderButton(false)
+
+    await usePlayerStore.getState().resetRunState()
+
+    const session = usePlayerStore.getState().session
+    if (session) {
+      await useInventoryStore.getState().loadInventory(session.userId)
+    }
+
+    const equipment = useInventoryStore.getState().equipment
+    const weaponId = equipment?.equippedWeaponId ?? "tree_branch"
+    const handId = equipment?.equippedHandId ?? "bare_hand"
+    const boxId = equipment?.equippedBoxId ?? "basic_box"
+
+    this.game.registry.set("equippedWeaponId", weaponId)
+    this.game.registry.set("equippedHandId", handId)
+    this.game.registry.set("equippedBoxId", boxId)
+    EventBus.emit("EQUIPMENT_UPDATED", { weaponId, handId, boxId })
     EventBus.emit("RUN_STARTED")
     this.scene.stop()
   }

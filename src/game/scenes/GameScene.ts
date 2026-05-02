@@ -18,7 +18,6 @@ import { getCombatLoadout } from "../data/combatLoadouts"
 import { getBox } from "../data/boxes"
 import type { GraphicsQuality } from "../types/game"
 import type { CombatLoadout } from "../types/game"
-import { randomBool } from "../utils/random"
 
 export const SCENE_W = 1920
 export const SCENE_H = 1080
@@ -315,8 +314,8 @@ export class GameScene extends Phaser.Scene {
 
     // pointer.velocity ≈ px/frame a 60 fps; un swipe rápido da ~50 px/frame
     const strength = Math.max(0.2, Math.min(speed / 50, 1.0))
-    const didHit = randomBool(this.combatLoadout.successChance)
-    const isCritical = didHit && randomBool(this.combatLoadout.criticalChance)
+    const didHit = true
+    const isCritical = Math.random() < this.combatLoadout.criticalChance
 
     this.events.emit("swipe:hit", {
       direction: { x: dx, y: dy },

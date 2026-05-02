@@ -16,6 +16,7 @@ import * as Phaser from "phaser"
 import { createGame } from "../game/PhaserGame"
 import type { ComboState, RunResult } from "../game/types/game"
 import { C, FONT } from "./shared/theme"
+import { LoadingScreen } from "./LoadingScreen"
 import { ShopScreen } from "./ShopScreen"
 
 // ── HUD ──────────────────────────────────────────────────────
@@ -337,6 +338,7 @@ export function GameScreen() {
   const gameRef = useRef<Phaser.Game | null>(null)
   const bgImgRef = useRef<HTMLImageElement>(null)
   const [shopOverlayOpen, setShopOverlayOpen] = useState(false)
+  const [isPreparingRun, setIsPreparingRun] = useState(true)
 
   // ── Stores ────────────────────────────────────────────────
   const isRunActive = useGameStore((s) => s.isRunActive)
@@ -349,19 +351,40 @@ export function GameScreen() {
   const updateRunScore = useGameStore((s) => s.updateRunScore)
   const updateCombo = useGameStore((s) => s.updateCombo)
   const endRun = useGameStore((s) => s.endRun)
-  const musicEnabled = useGameStore((s) => s.musicEnabled)
-  const sfxEnabled = useGameStore((s) => s.sfxEnabled)
-  const vibrationEnabled = useGameStore((s) => s.vibrationEnabled)
-  const quality = useGameStore((s) => s.quality)
 
   const equipment = useInventoryStore((s) => s.equipment)
-  const profile = usePlayerStore((s) => s.profile)
+  const loadInventory = useInventoryStore((s) => s.loadInventory)
   const addCoins = usePlayerStore((s) => s.addCoins)
+  const resetRunState = usePlayerStore((s) => s.resetRunState)
   const isShopVisible = isShopOpen || shopOverlayOpen
 
   useEffect(() => {
     if (isShopVisible) return
   }, [isShopVisible])
+
+  useEffect(() => {
+    let cancelled = false
+
+    const prepareFreshRun = async () => {
+      try {
+        await resetRunState()
+        const nextSession = usePlayerStore.getState().session
+        if (nextSession) {
+          await loadInventory(nextSession.userId)
+        }
+      } finally {
+        if (!cancelled) {
+          setIsPreparingRun(false)
+        }
+      }
+    }
+
+    void prepareFreshRun()
+
+    return () => {
+      cancelled = true
+    }
+  }, [loadInventory, resetRunState])
 
   // Fuerza el fondo del body al inicial nada más montar (sobrescribe cualquier caché de index.html)
   useEffect(() => {
@@ -386,17 +409,21 @@ export function GameScreen() {
 
   // ── Phaser bootstrap ──────────────────────────────────────
   useEffect(() => {
-    if (!containerRef.current) return
+    if (isPreparingRun || !containerRef.current) return
+
+    const currentEquipment = useInventoryStore.getState().equipment
+    const currentProfile = usePlayerStore.getState().profile
+    const currentGame = useGameStore.getState()
 
     gameRef.current = createGame(containerRef.current, {
-      equippedWeaponId: equipment?.equippedWeaponId ?? "tree_branch",
-      equippedHandId: equipment?.equippedHandId ?? "bare_hand",
-      equippedBoxId: equipment?.equippedBoxId ?? "basic_box",
-      musicEnabled,
-      sfxEnabled,
-      vibrationEnabled,
-      quality,
-      username: profile?.username ?? "Player",
+      equippedWeaponId: currentEquipment?.equippedWeaponId ?? "tree_branch",
+      equippedHandId: currentEquipment?.equippedHandId ?? "bare_hand",
+      equippedBoxId: currentEquipment?.equippedBoxId ?? "basic_box",
+      musicEnabled: currentGame.musicEnabled,
+      sfxEnabled: currentGame.sfxEnabled,
+      vibrationEnabled: currentGame.vibrationEnabled,
+      quality: currentGame.quality,
+      username: currentProfile?.username ?? "Player",
     })
 
     return () => {
@@ -404,9 +431,9 @@ export function GameScreen() {
       gameRef.current = null
       document.body.style.background = `#1a1a2e url('${BG_URLS[0]}') center center / cover no-repeat`
     }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
-  // ↑ Intencional: creamos el juego una vez; los cambios de preferencia
-  //   se comunican a Phaser vía EventBus desde los stores.
+  }, [isPreparingRun])
+  // ↑ Intencional: creamos el juego una vez cuando la run limpia ya está preparada;
+  //   los cambios posteriores se comunican a Phaser vía EventBus desde los stores.
 
   useEffect(() => {
     if (!gameRef.current || !equipment) return
@@ -507,6 +534,10 @@ export function GameScreen() {
       window.removeEventListener("rp:open-shop", onBrowserOpenShop)
     }
   }, [addCoins, updateRunScore, updateCombo, closeShop, endRun, showPauseMenu, navigate])
+
+  if (isPreparingRun) {
+    return <LoadingScreen />
+  }
 
   return (
     <div

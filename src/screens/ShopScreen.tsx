@@ -977,10 +977,10 @@ function buildDetailStats(item: ShopCatalogItem): DetailStat[] {
       filled: toSegments(item.attack, 5, 65),
     },
     {
-      icon: "◎",
-      label: "PRECISION",
-      value: `${item.precision}`,
-      filled: toSegments(item.precision, 40, 85),
+      icon: "💰",
+      label: "BOTIN",
+      value: `${item.loot}`,
+      filled: toSegments(item.loot, 10, 80),
     },
   ]
 }

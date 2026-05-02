@@ -30,12 +30,15 @@ export function weightedRandom<T extends { probability: number }>(items: T[]): T
   return items[items.length - 1]
 }
 
-// Elige un tipo de moneda; rarityBonus (0–1) amplifica monedas con rarityWeight > 0
+// El progreso del equipo decide que drops pueden aparecer.
+// rarityBonus (0–1) inclina el resultado hacia los drops raros ya desbloqueados.
 export function pickCoinType(
   definitions: CoinDefinition[],
+  unlockProgress: number,
   rarityBonus: number,
 ): CoinTypeId {
-  const adjusted = definitions.map((def) => ({
+  const eligible = definitions.filter((def) => unlockProgress >= def.unlockAt)
+  const adjusted = (eligible.length > 0 ? eligible : definitions).map((def) => ({
     ...def,
     probability: def.probability * (1 + rarityBonus * def.rarityWeight),
   }))

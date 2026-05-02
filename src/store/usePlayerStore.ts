@@ -11,6 +11,7 @@ import { DEFAULT_PREFERENCES } from "../game/types/player"
 import {
   LOCAL_SESSION,
   resetLocalData,
+  resetRunLocalData,
   updateLocalData,
 } from "../services/local/storage"
 
@@ -49,6 +50,9 @@ type PlayerActions = {
 
   // Reinicia el progreso local
   resetProgress: () => Promise<void>
+
+  // Reinicia solo monedas de tienda e inventario/equipo para una nueva partida
+  resetRunState: () => Promise<void>
 }
 
 const PREFS_KEY = "rp_preferences"
@@ -144,6 +148,18 @@ export const usePlayerStore = create<PlayerState & PlayerActions>(
 
     resetProgress: async () => {
       const reset = resetLocalData()
+      set({
+        session: { ...LOCAL_SESSION },
+        profile: reset.profile,
+        wallet: reset.wallet,
+        loadError: null,
+        isLoadingSession: false,
+        isLoadingPlayer: false,
+      })
+    },
+
+    resetRunState: async () => {
+      const reset = resetRunLocalData()
       set({
         session: { ...LOCAL_SESSION },
         profile: reset.profile,

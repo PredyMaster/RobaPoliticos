@@ -13,13 +13,13 @@ type ShopCatalogItemBase = {
 export type ShopWeaponCatalogItem = ShopCatalogItemBase & {
   category: 'weapon'
   attack: number
-  precision: number
+  loot: number
 }
 
 export type ShopHandCatalogItem = ShopCatalogItemBase & {
   category: 'hand'
   attack: number
-  precision: number
+  loot: number
 }
 
 export type ShopBoxCatalogItem = ShopCatalogItemBase & {
@@ -48,7 +48,7 @@ export const SHOP_WEAPONS: ShopWeaponCatalogItem[] = [
     id: 'tree_branch',
     name: 'Rama de árbol',
     attack: 10,
-    precision: 40,
+    loot: 10,
     price: 0,
     description: 'Gratis, ecológica y peligrosa… si tienes mucha imaginación.',
     unlockLevel: 1,
@@ -60,7 +60,7 @@ export const SHOP_WEAPONS: ShopWeaponCatalogItem[] = [
     id: 'wrench',
     name: 'Llave inglesa',
     attack: 18,
-    precision: 55,
+    loot: 24,
     price: 250,
     description: 'No arregla problemas… los crea.',
     unlockLevel: 1,
@@ -72,7 +72,7 @@ export const SHOP_WEAPONS: ShopWeaponCatalogItem[] = [
     id: 'bat',
     name: 'Bate',
     attack: 28,
-    precision: 45,
+    loot: 38,
     price: 800,
     description: 'Clásico. Directo. Dolor garantizado.',
     unlockLevel: 1,
@@ -84,7 +84,7 @@ export const SHOP_WEAPONS: ShopWeaponCatalogItem[] = [
     id: 'hammer',
     name: 'Martillo',
     attack: 38,
-    precision: 60,
+    loot: 52,
     price: 2000,
     description: 'Cada golpe suena como una factura pagada.',
     unlockLevel: 1,
@@ -96,7 +96,7 @@ export const SHOP_WEAPONS: ShopWeaponCatalogItem[] = [
     id: 'pan',
     name: 'Sartén',
     attack: 48,
-    precision: 70,
+    loot: 66,
     price: 5000,
     description: 'Ideal para cocinar… y para repartir justicia.',
     unlockLevel: 1,
@@ -108,7 +108,7 @@ export const SHOP_WEAPONS: ShopWeaponCatalogItem[] = [
     id: 'golden_hammer',
     name: 'Martillo dorado',
     attack: 65,
-    precision: 80,
+    loot: 80,
     price: 12000,
     description: 'Para cuando quieres pegar como un millonario.',
     unlockLevel: 1,
@@ -123,7 +123,7 @@ export const SHOP_HANDS: ShopHandCatalogItem[] = [
     id: 'bare_hand',
     name: 'Mano desnuda',
     attack: 5,
-    precision: 50,
+    loot: 10,
     price: 0,
     description: 'La vieja confiable… pero no esperes milagros.',
     unlockLevel: 1,
@@ -135,7 +135,7 @@ export const SHOP_HANDS: ShopHandCatalogItem[] = [
     id: 'bandaged_hand',
     name: 'Mano vendada',
     attack: 10,
-    precision: 60,
+    loot: 24,
     price: 200,
     description: 'Te crees boxeador… y empiezas a parecerlo.',
     unlockLevel: 1,
@@ -147,7 +147,7 @@ export const SHOP_HANDS: ShopHandCatalogItem[] = [
     id: 'leather_glove',
     name: 'Guante de cuero',
     attack: 18,
-    precision: 65,
+    loot: 38,
     price: 700,
     description: 'Elegante, cómodo y sorprendentemente agresivo.',
     unlockLevel: 1,
@@ -159,7 +159,7 @@ export const SHOP_HANDS: ShopHandCatalogItem[] = [
     id: 'boxing_glove',
     name: 'Guante de boxeo',
     attack: 25,
-    precision: 55,
+    loot: 52,
     price: 1500,
     description: 'No ves los dedos, pero el daño sí se nota.',
     unlockLevel: 1,
@@ -171,7 +171,7 @@ export const SHOP_HANDS: ShopHandCatalogItem[] = [
     id: 'iron_glove',
     name: 'Guante de hierro',
     attack: 35,
-    precision: 70,
+    loot: 66,
     price: 4000,
     description: 'Aquí ya no estás jugando.',
     unlockLevel: 1,
@@ -183,7 +183,7 @@ export const SHOP_HANDS: ShopHandCatalogItem[] = [
     id: 'golden_glove',
     name: 'Guante dorado',
     attack: 50,
-    precision: 85,
+    loot: 80,
     price: 10000,
     description: 'Pegas tan fuerte que hasta el dinero sale volando.',
     unlockLevel: 1,

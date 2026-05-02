@@ -2,7 +2,6 @@ import * as Phaser from 'phaser'
 import type { PlayerCharacter } from '../entities/PlayerCharacter'
 import type { CombatLoadout } from '../types/game'
 import { swipeStrength, normalize } from '../utils/math'
-import { randomBool } from '../utils/random'
 
 const MIN_DISTANCE_PX = 40
 const MIN_DURATION_MS = 40
@@ -68,9 +67,8 @@ export class SwipeSystem {
     const speed    = distance / Math.max(duration, 1)
     const strength = swipeStrength(speed, distance)
     const dir      = normalize(dx, dy)
-    const didHit = randomBool(this.loadout.successChance)
-    const isCritical =
-      didHit && randomBool(this.loadout.criticalChance)
+    const didHit = true
+    const isCritical = Math.random() < this.loadout.criticalChance
 
     const event: SwipeHitEvent = {
       direction: dir,

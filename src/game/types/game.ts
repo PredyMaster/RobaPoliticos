@@ -7,8 +7,7 @@ export type Weapon = {
   price: number
   unlockLevel: number
   attack: number
-  precision: number
-  coinsPerHit: number
+  loot: number
   force: number
   cooldown: number          // segundos entre golpes
   criticalChance: number    // 0–1
@@ -41,21 +40,23 @@ export type HandItem = {
   price: number
   unlockLevel: number
   attack: number
-  precision: number
+  loot: number
 }
 
 export type CombatLoadout = {
   weapon: Weapon
   hand: HandItem
   attack: number
-  precision: number
-  successChance: number
+  loot: number
   force: number
   cooldown: number
   criticalChance: number
   criticalMultiplier: number
   spread: number
   rarityBonus: number
+  dropProgress: number
+  minDrops: number
+  maxDrops: number
   soundEffect: string
   cursorTextureKey: string
   cursorTexturePath: string
@@ -74,6 +75,7 @@ export type CoinDefinition = {
   id: CoinTypeId
   value: number
   probability: number   // peso relativo (se normaliza en CoinSpawnSystem)
+  unlockAt: number      // progreso mínimo del equipo para que pueda salir
   visualAsset: string
   rarityWeight: number  // 0 = prob. fija, >0 = amplificada por rarityBonus del golpe
 }

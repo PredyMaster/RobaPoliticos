@@ -8,7 +8,7 @@ export const HANDS: HandItem[] = SHOP_HANDS.map((hand) => ({
   price: hand.price,
   unlockLevel: hand.unlockLevel,
   attack: hand.attack,
-  precision: hand.precision,
+  loot: hand.loot,
 }))
 
 export const HANDS_MAP = new Map<string, HandItem>(HANDS.map((hand) => [hand.id, hand]))

@@ -1,14 +1,15 @@
 import type { CoinDefinition } from '../types/game'
 
-// Probabilidades base (rarityBonus = 0, golpe débil sin combo):
-//   coin_silver ~55 % · coin_gold ~30 % · bill_blue ~10 % · bill_green ~4 % · bill_pink ~1 %
-// Con rarityBonus máximo (fiebre + golpe fuerte):
-//   bill_green sube a ~13 % · bill_pink sube a ~7 %
+// El equipo controla que tipo de botin puede salir:
+//   tier bajo -> solo monedas
+//   tier medio -> empiezan los billetes azules
+//   tier alto -> entran billetes verdes y rosas con algo de aleatoriedad
 export const COIN_DEFINITIONS: CoinDefinition[] = [
   {
     id: 'coin_silver',
     value: 1,
-    probability: 55,
+    probability: 70,
+    unlockAt: 0,
     visualAsset: 'coin_silver',
     rarityWeight: 0,
   },
@@ -16,29 +17,33 @@ export const COIN_DEFINITIONS: CoinDefinition[] = [
     id: 'coin_gold',
     value: 2,
     probability: 30,
+    unlockAt: 0,
     visualAsset: 'coin_gold',
-    rarityWeight: 0,
+    rarityWeight: 0.25,
   },
   {
     id: 'bill_blue',
     value: 5,
-    probability: 10,
+    probability: 18,
+    unlockAt: 0.3,
     visualAsset: 'bill_blue',
-    rarityWeight: 0,
+    rarityWeight: 1.4,
   },
   {
     id: 'bill_green',
     value: 10,
-    probability: 4,
+    probability: 10,
+    unlockAt: 0.6,
     visualAsset: 'bill_green',
-    rarityWeight: 3,
+    rarityWeight: 2.5,
   },
   {
     id: 'bill_pink',
     value: 20,
-    probability: 1,
+    probability: 6,
+    unlockAt: 0.82,
     visualAsset: 'bill_pink',
-    rarityWeight: 8,
+    rarityWeight: 4,
   },
 ]
 

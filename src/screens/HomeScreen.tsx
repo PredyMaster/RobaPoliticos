@@ -106,12 +106,12 @@ export function HomeScreen() {
         <EquipCard
           label="Arma equipada"
           name={weapon?.name ?? '—'}
-          detail={weapon ? `${weapon.attack} ataque · ${weapon.precision} precision` : 'Sin equipar'}
+          detail={weapon ? `${weapon.attack} ataque · ${weapon.loot} botin` : 'Sin equipar'}
         />
         <EquipCard
           label="Mano equipada"
           name={hand?.name ?? '—'}
-          detail={hand ? `${hand.attack} ataque · ${hand.precision} precision` : 'Sin equipar'}
+          detail={hand ? `${hand.attack} ataque · ${hand.loot} botin` : 'Sin equipar'}
         />
         <EquipCard
           label="Caja equipada"

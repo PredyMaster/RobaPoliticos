@@ -60,11 +60,33 @@ function createInventoryItem(itemType: InventoryItem['itemType'], itemId: string
   }
 }
 
-function createInitialData(): LocalGameData {
-  const createdAt = nowIso()
+function getDefaultLoadout(createdAt = nowIso()): {
+  inventory: InventoryItem[]
+  equipment: PlayerEquipment
+} {
   const defaultWeaponId = resolveWeaponId(SHOP_WEAPONS[0].id)
   const defaultHandId = resolveHandId(SHOP_HANDS[0].id)
   const defaultBoxId = resolveBoxId(SHOP_BOXES[0].id)
+
+  return {
+    inventory: [
+      createInventoryItem('weapon', defaultWeaponId),
+      createInventoryItem('hand', defaultHandId),
+      createInventoryItem('box', defaultBoxId),
+    ],
+    equipment: {
+      userId: LOCAL_USER_ID,
+      equippedWeaponId: defaultWeaponId,
+      equippedHandId: defaultHandId,
+      equippedBoxId: defaultBoxId,
+      updatedAt: createdAt,
+    },
+  }
+}
+
+function createInitialData(): LocalGameData {
+  const createdAt = nowIso()
+  const { inventory, equipment } = getDefaultLoadout(createdAt)
 
   return {
     profile: {
@@ -82,18 +104,8 @@ function createInitialData(): LocalGameData {
       premiumGems: 0,
       updatedAt: createdAt,
     },
-    inventory: [
-      createInventoryItem('weapon', defaultWeaponId),
-      createInventoryItem('hand', defaultHandId),
-      createInventoryItem('box', defaultBoxId),
-    ],
-    equipment: {
-      userId: LOCAL_USER_ID,
-      equippedWeaponId: defaultWeaponId,
-      equippedHandId: defaultHandId,
-      equippedBoxId: defaultBoxId,
-      updatedAt: createdAt,
-    },
+    inventory,
+    equipment,
     runs: [],
     missionClaims: [],
   }
@@ -254,6 +266,23 @@ export function updateLocalData(
 export function resetLocalData(): LocalGameData {
   const initial = createInitialData()
   return saveLocalData(initial)
+}
+
+export function resetRunLocalData(): LocalGameData {
+  const current = getLocalData()
+  const updatedAt = nowIso()
+  const { inventory, equipment } = getDefaultLoadout(updatedAt)
+
+  return saveLocalData({
+    ...current,
+    wallet: {
+      ...current.wallet,
+      currentCoins: 0,
+      updatedAt,
+    },
+    inventory,
+    equipment,
+  })
 }
 
 export function getTodayKey(date = new Date()): string {
