@@ -24,7 +24,8 @@ export const SCENE_W = 1920
 export const SCENE_H = 1080
 export const GROUND_Y = SCENE_H - 40
 
-export const SHOW_COLLIDERS = false
+export const showColliders = false
+export const SHOW_COLLIDERS = showColliders
 
 const POOL_SIZE = 256
 
@@ -139,7 +140,7 @@ export class GameScene extends Phaser.Scene {
 
     this.player = new PlayerCharacter(this)
     this.box = new CatchBox(this, boxCfg)
-    this.cursor = new WeaponCursor(this, loadout.cursorTextureKey)
+    this.cursor = new WeaponCursor(this, loadout.cursorTextureKey, this.player)
     this.pool = new ObjectPool<Coin>(() => new Coin(this), POOL_SIZE)
   }
 
@@ -315,8 +316,7 @@ export class GameScene extends Phaser.Scene {
     // pointer.velocity ≈ px/frame a 60 fps; un swipe rápido da ~50 px/frame
     const strength = Math.max(0.2, Math.min(speed / 50, 1.0))
     const didHit = randomBool(this.combatLoadout.successChance)
-    const isCritical =
-      didHit && randomBool(this.combatLoadout.criticalChance)
+    const isCritical = didHit && randomBool(this.combatLoadout.criticalChance)
 
     this.events.emit("swipe:hit", {
       direction: { x: dx, y: dy },

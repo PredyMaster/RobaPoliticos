@@ -1,7 +1,7 @@
 import * as Phaser from "phaser"
 import type { CoinTypeId, CoinState } from "../types/game"
 import { COIN_LIFETIME_MS } from "../data/coins"
-import { SHOW_COLLIDERS } from "../scenes/GameScene"
+import { showColliders } from "../scenes/GameScene"
 
 const TEXTURE_MAP: Record<CoinTypeId, string> = {
   coin_silver: 'coin_silver',
@@ -31,7 +31,7 @@ export class Coin extends Phaser.Physics.Arcade.Sprite {
     body.setCollideWorldBounds(false)
     body.setAllowGravity(true)
 
-    if (SHOW_COLLIDERS) {
+    if (showColliders) {
       this.debugGfx = scene.add.graphics()
       this.debugGfx.setDepth(this.depth + 1)
       scene.events.on(Phaser.Scenes.Events.POST_UPDATE, this.redrawDebug, this)

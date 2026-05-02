@@ -1,6 +1,6 @@
 import * as Phaser from "phaser"
 import type { BoxItem } from "../types/game"
-import { SCENE_W, GROUND_Y, SHOW_COLLIDERS } from "../scenes/GameScene"
+import { SCENE_W, GROUND_Y, showColliders } from "../scenes/GameScene"
 import type { Coin } from "./Coin"
 
 const SAFE_MARGIN = 30
@@ -32,7 +32,7 @@ export class CatchBox extends Phaser.GameObjects.Image {
       config.height,
     )
 
-    if (SHOW_COLLIDERS) {
+    if (showColliders) {
       this.debugGfx = scene.add.graphics()
       this.debugGfx.setDepth(this.depth + 1)
       this.redrawDebug()
@@ -119,14 +119,14 @@ export class CatchBox extends Phaser.GameObjects.Image {
   private redrawDebug(): void {
     if (!this.debugGfx) return
     this.debugGfx.clear()
-    this.debugGfx.fillStyle(0xff3333, 0.3)
+    this.debugGfx.fillStyle(0x0066ff, 0.3)
     this.debugGfx.fillRect(
       this.catchArea.x,
       this.catchArea.y,
       this.catchArea.width,
       this.catchArea.height,
     )
-    this.debugGfx.lineStyle(3, 0xff3333, 0.9)
+    this.debugGfx.lineStyle(3, 0x0066ff, 0.9)
     this.debugGfx.strokeRect(
       this.catchArea.x,
       this.catchArea.y,

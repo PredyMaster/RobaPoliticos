@@ -1,11 +1,9 @@
 import * as Phaser from "phaser"
-import { SHOW_COLLIDERS } from "../scenes/GameScene"
+import { showColliders } from "../scenes/GameScene"
 
 const WEAPON_W = 215
 const WEAPON_H = 350
 
-const VELOCITY_THRESHOLD = 50 // px/frame mínimos para actualizar ángulo
-const VELOCITY_SMOOTH = 0.07 // factor EMA sobre la velocidad raw (0=congelar, 1=sin suavizar)
 const ROTATION_LERP = 0.2 // resistencia rotacional por frame (0=rígido, 1=instantáneo)
 
 export class WeaponCursor extends Phaser.GameObjects.Image {
@@ -17,20 +15,23 @@ export class WeaponCursor extends Phaser.GameObjects.Image {
   // Visual-only scale multiplier; hitZone always stays at WEAPON_W×WEAPON_H
   private baseScale: number
   private debugGfx?: Phaser.GameObjects.Graphics
+  private readonly lookAtTarget?: { x: number; y: number }
 
-  private smoothVel: { x: number; y: number } = { x: 0, y: 0 }
-  private targetRotation: number = 0
-
-  constructor(scene: Phaser.Scene, textureKey = "weapon_cursor") {
+  constructor(
+    scene: Phaser.Scene,
+    textureKey = "weapon_cursor",
+    lookAtTarget?: { x: number; y: number },
+  ) {
     super(scene, 0, 0, textureKey)
     scene.add.existing(this)
     // Origen centrado para que rotación y collider queden estables sobre el puntero
     this.setOrigin(0.5, 0.5)
     this.setDepth(20)
+    this.lookAtTarget = lookAtTarget
 
     this.hitZone = new Phaser.Geom.Rectangle(0, 0, WEAPON_W, WEAPON_H)
 
-    if (SHOW_COLLIDERS) {
+    if (showColliders) {
       this.debugGfx = scene.add.graphics()
       this.debugGfx.setDepth(this.depth + 1)
     }
@@ -61,34 +62,36 @@ export class WeaponCursor extends Phaser.GameObjects.Image {
     this.syncHitZone()
   }
 
-  private updateFlip(x: number): void {
-    this.setFlipX(x < this.scene.scale.width / 2)
+  private getTargetRotation(): number {
+    const targetX = this.lookAtTarget?.x ?? this.scene.scale.width / 2
+    const targetY = this.lookAtTarget?.y ?? this.scene.scale.height / 2
+    const angleToTarget = Phaser.Math.Angle.Between(
+      this.x,
+      this.y,
+      targetX,
+      targetY,
+    )
+
+    // Las texturas reales reposan mirando hacia la izquierda. Cuando el cursor
+    // queda a la izquierda del player, hacemos flip para que siga "apuntándole"
+    // y luego ajustamos la rotación visual sin afectar la hitbox.
+    const shouldFlip = targetX > this.x
+    this.setFlipX(shouldFlip)
+
+    return shouldFlip ? angleToTarget : angleToTarget - Math.PI
   }
 
   private onMove(pointer: Phaser.Input.Pointer): void {
     this.setPosition(pointer.x, pointer.y)
-    this.updateFlip(pointer.x)
     this.lastVelocity = { x: pointer.velocity.x, y: pointer.velocity.y }
     this.syncHitZone()
 
     if (this.isDesktop) {
       this.setVisible(true)
-      // EMA sobre la velocidad raw para filtrar micro-movimientos bruscos
-      this.smoothVel.x =
-        this.smoothVel.x * (1 - VELOCITY_SMOOTH) +
-        pointer.velocity.x * VELOCITY_SMOOTH
-      this.smoothVel.y =
-        this.smoothVel.y * (1 - VELOCITY_SMOOTH) +
-        pointer.velocity.y * VELOCITY_SMOOTH
-      const mag = Math.sqrt(this.smoothVel.x ** 2 + this.smoothVel.y ** 2)
-      if (mag > VELOCITY_THRESHOLD) {
-        this.targetRotation = Math.atan2(this.smoothVel.y, this.smoothVel.x)
-      }
     } else if (pointer.isDown) {
       const dx = pointer.x - pointer.downX
       const dy = pointer.y - pointer.downY
       if (dx !== 0 || dy !== 0) {
-        this.targetRotation = Math.atan2(dy, dx)
         // On Android/Capacitor, pointer.velocity is unreliable; use total displacement instead
         this.lastVelocity = { x: dx, y: dy }
       }
@@ -96,8 +99,9 @@ export class WeaponCursor extends Phaser.GameObjects.Image {
   }
 
   private onUpdate(): void {
+    const targetRotation = this.getTargetRotation()
     // Interpolación angular por el camino más corto hacia targetRotation
-    let diff = this.targetRotation - this.rotation
+    let diff = targetRotation - this.rotation
     if (diff > Math.PI) diff -= Math.PI * 2
     if (diff < -Math.PI) diff += Math.PI * 2
     if (Math.abs(diff) > 0.001) {
@@ -107,7 +111,6 @@ export class WeaponCursor extends Phaser.GameObjects.Image {
 
   private onDown(pointer: Phaser.Input.Pointer): void {
     this.setPosition(pointer.x, pointer.y)
-    this.updateFlip(pointer.x)
     this.setVisible(true)
     this.syncHitZone()
   }

@@ -1,10 +1,13 @@
 import * as Phaser from "phaser"
-import { SCENE_W, SCENE_H, SHOW_COLLIDERS } from "../scenes/GameScene"
+import { SCENE_W, SCENE_H, showColliders } from "../scenes/GameScene"
 import type { SwipeHitEvent } from "../systems/SwipeSystem"
 
 const PLAYER_W = 464
 const PLAYER_H = 515
 const VISUAL_SCALE = 0.9
+const HITBOX_SCALE = 0.8
+const HITBOX_W = PLAYER_W * HITBOX_SCALE
+const HITBOX_H = PLAYER_H * HITBOX_SCALE
 
 const SLAP_DURATION_MS = 250
 const HARD_SLAP_THRESHOLD = 0.65
@@ -25,13 +28,13 @@ export class PlayerCharacter extends Phaser.GameObjects.Sprite {
     this.setScale(VISUAL_SCALE)
 
     this.hitZone = new Phaser.Geom.Rectangle(
-      x - PLAYER_W / 2,
-      y - PLAYER_H / 2,
-      PLAYER_W,
-      PLAYER_H,
+      x - HITBOX_W / 2,
+      y - HITBOX_H / 2,
+      HITBOX_W,
+      HITBOX_H,
     )
 
-    if (SHOW_COLLIDERS) {
+    if (showColliders) {
       this.debugGfx = scene.add.graphics()
       this.debugGfx.setDepth(this.depth + 1)
       this.redrawDebug()
@@ -94,22 +97,22 @@ export class PlayerCharacter extends Phaser.GameObjects.Sprite {
   }
 
   private syncHitZone(): void {
-    this.hitZone.x = this.x - PLAYER_W / 2
-    this.hitZone.y = this.y - PLAYER_H / 2
+    this.hitZone.x = this.x - HITBOX_W / 2
+    this.hitZone.y = this.y - HITBOX_H / 2
     this.redrawDebug()
   }
 
   private redrawDebug(): void {
     if (!this.debugGfx) return
     this.debugGfx.clear()
-    this.debugGfx.fillStyle(0x0066ff, 0.3)
+    this.debugGfx.fillStyle(0xff3333, 0.3)
     this.debugGfx.fillRect(
       this.hitZone.x,
       this.hitZone.y,
       this.hitZone.width,
       this.hitZone.height,
     )
-    this.debugGfx.lineStyle(3, 0x0066ff, 0.9)
+    this.debugGfx.lineStyle(3, 0xff3333, 0.9)
     this.debugGfx.strokeRect(
       this.hitZone.x,
       this.hitZone.y,
