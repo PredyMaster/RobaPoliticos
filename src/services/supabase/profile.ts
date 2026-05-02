@@ -22,7 +22,7 @@ function rowToProfile(row: {
 export async function getProfile(
   userId: string,
 ): Promise<{ data: Profile | null; error: string | null }> {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('profiles')
     .select('*')
     .eq('id', userId)
@@ -36,13 +36,16 @@ export async function updateProfile(
   userId: string,
   updates: { username?: string; avatarUrl?: string | null },
 ): Promise<{ data: Profile | null; error: string | null }> {
-  const { data, error } = await supabase
+  const payload: Record<string, unknown> = {
+    updated_at: new Date().toISOString(),
+  }
+
+  if (updates.username !== undefined) payload.username = updates.username
+  if (updates.avatarUrl !== undefined) payload.avatar_url = updates.avatarUrl
+
+  const { data, error } = await (supabase as any)
     .from('profiles')
-    .update({
-      ...(updates.username !== undefined && { username: updates.username }),
-      ...(updates.avatarUrl !== undefined && { avatar_url: updates.avatarUrl }),
-      updated_at: new Date().toISOString(),
-    })
+    .update(payload)
     .eq('id', userId)
     .select()
     .single()

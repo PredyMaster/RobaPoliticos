@@ -3,7 +3,7 @@ import type { RunResult } from '../../game/types/game'
 import type { SubmitRunResult } from '../../game/types/player'
 
 export async function submitRun(run: RunResult): Promise<SubmitRunResult> {
-  const { data, error } = await supabase.rpc('submit_run', {
+  const { data, error } = await (supabase as any).rpc('submit_run', {
     p_score_gained:       run.scoreGained,
     p_coins_collected:    run.coinsCollected,
     p_coins_lost:         run.coinsLost,
@@ -58,7 +58,7 @@ export async function getRunHistory(
   }[]
   error: string | null
 }> {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('runs')
     .select('id, score_gained, coins_collected, max_combo, hits, duration_seconds, created_at')
     .eq('user_id', userId)
@@ -68,8 +68,18 @@ export async function getRunHistory(
 
   if (error) return { data: [], error: error.message }
 
+  const rows = (data ?? []) as Array<{
+    id: string
+    score_gained: number
+    coins_collected: number
+    max_combo: number
+    hits: number
+    duration_seconds: number
+    created_at: string
+  }>
+
   return {
-    data: data.map((row) => ({
+    data: rows.map((row) => ({
       id:               row.id,
       scoreGained:      row.score_gained,
       coinsCollected:   row.coins_collected,

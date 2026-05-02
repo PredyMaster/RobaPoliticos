@@ -31,8 +31,8 @@ export function StandaloneGame() {
     if (!containerRef.current || gameRef.current) return
 
     gameRef.current = createGame(containerRef.current, {
-      equippedWeaponId: "hand_basic",
-      equippedBoxId: "small_box",
+      equippedWeaponId: "tree_branch",
+      equippedBoxId: "basic_box",
       musicEnabled: true,
       sfxEnabled: true,
       vibrationEnabled: false,

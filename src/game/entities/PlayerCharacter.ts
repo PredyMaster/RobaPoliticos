@@ -4,7 +4,7 @@ import type { SwipeHitEvent } from "../systems/SwipeSystem"
 
 const PLAYER_W = 464
 const PLAYER_H = 515
-const VISUAL_SCALE = 1.2
+const VISUAL_SCALE = 0.9
 
 const SLAP_DURATION_MS = 250
 const HARD_SLAP_THRESHOLD = 0.65
@@ -18,7 +18,7 @@ export class PlayerCharacter extends Phaser.GameObjects.Sprite {
 
   constructor(scene: Phaser.Scene) {
     const x = SCENE_W / 2
-    const y = SCENE_H / 2 - 120
+    const y = SCENE_H / 2 - 100
     super(scene, x, y, "player")
     scene.add.existing(this)
 

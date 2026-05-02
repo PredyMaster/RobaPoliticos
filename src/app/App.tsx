@@ -32,7 +32,7 @@ export default function App() {
           <Route path="/profile"  element={<P><ProfileScreen /></P>} />
           <Route path="/missions" element={<P><MissionsScreen /></P>} />
           <Route path="/settings" element={<P><SettingsScreen /></P>} />
-          <Route path="/end-run"  element={<P><EndRunScreen /></P>} />
+          <Route path="/end-run"  element={<EndRunScreen />} />
 
           {/* Fallbacks */}
           <Route path="/"  element={<Navigate to="/home" replace />} />

@@ -1,5 +1,7 @@
 // Tipos de economía: wallet, compras, inventario, equipamiento
 
+export type ShopItemType = 'weapon' | 'hand' | 'box'
+
 export type Wallet = {
   userId: string
   totalScore: number
@@ -11,7 +13,7 @@ export type Wallet = {
 export type InventoryItem = {
   id: string
   userId: string
-  itemType: 'weapon' | 'box'
+  itemType: ShopItemType
   itemId: string
   purchasedAt: string
 }
@@ -19,6 +21,7 @@ export type InventoryItem = {
 export type PlayerEquipment = {
   userId: string
   equippedWeaponId: string
+  equippedHandId?: string
   equippedBoxId: string
   updatedAt: string
 }
@@ -26,12 +29,12 @@ export type PlayerEquipment = {
 // ── Compras ──────────────────────────────────────────────────
 
 export type PurchaseRequest = {
-  itemType: 'weapon' | 'box'
+  itemType: ShopItemType
   itemId: string
 }
 
 export type PurchaseResult =
-  | { ok: true; itemType: 'weapon' | 'box'; itemId: string }
+  | { ok: true; itemType: ShopItemType; itemId: string }
   | { ok: false; error: PurchaseError; requiredLevel?: number; needed?: number; have?: number }
 
 export type PurchaseError =
@@ -43,7 +46,7 @@ export type PurchaseError =
   | 'insufficient_coins'
 
 export type EquipResult =
-  | { ok: true; itemType: 'weapon' | 'box'; itemId: string }
+  | { ok: true; itemType: ShopItemType; itemId: string }
   | { ok: false; error: EquipError }
 
 export type EquipError =
@@ -57,6 +60,11 @@ export type ShopItemStatus = 'locked' | 'available' | 'owned' | 'equipped'
 
 export type ShopWeaponItem = {
   weapon: import('./game').Weapon
+  status: ShopItemStatus
+}
+
+export type ShopHandItem = {
+  hand: import('./game').HandItem
   status: ShopItemStatus
 }
 

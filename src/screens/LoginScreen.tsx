@@ -72,6 +72,11 @@ export function LoginScreen() {
     navigate('/home', { replace: true })
   }
 
+  function handleGuestEnter() {
+    setError(null)
+    navigate('/game', { replace: true })
+  }
+
   return (
     <div style={s.root}>
       <h1 style={s.title}>Roba Políticos</h1>
@@ -111,6 +116,9 @@ export function LoginScreen() {
 
       <button style={s.link} onClick={() => setMode(mode === 'login' ? 'register' : 'login')}>
         {mode === 'login' ? '¿Sin cuenta? Regístrate' : '¿Ya tienes cuenta? Inicia sesión'}
+      </button>
+      <button style={s.link} onClick={handleGuestEnter} type="button">
+        Entrar como invitado
       </button>
     </div>
   )

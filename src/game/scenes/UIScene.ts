@@ -2,7 +2,6 @@ import * as Phaser from "phaser"
 import { EventBus } from "../EventBus"
 import type { ComboState } from "../types/game"
 import { useGameStore } from "../../store/useGameStore"
-import { openShopOverlay } from "../ui/shopOverlay"
 
 // UIScene corre en paralelo sobre GameScene.
 // React gestiona el HUD principal (GameHUD); esta escena se reserva
@@ -233,7 +232,7 @@ export class UIScene extends Phaser.Scene {
       }
       EventBus.emit("RUN_PAUSED")
       useGameStore.getState().openShop()
-      openShopOverlay()
+      EventBus.emit("OPEN_SHOP")
     })
   }
 

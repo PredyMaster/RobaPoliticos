@@ -1,22 +1,36 @@
 import { supabase } from './client'
-import type { InventoryItem, PlayerEquipment, PurchaseResult, EquipResult } from '../../game/types/economy'
+import type {
+  EquipResult,
+  InventoryItem,
+  PlayerEquipment,
+  PurchaseResult,
+  ShopItemType,
+} from '../../game/types/economy'
 
 // ── Inventario ───────────────────────────────────────────────
 
 export async function getInventory(
   userId: string,
 ): Promise<{ data: InventoryItem[]; error: string | null }> {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('player_inventory')
     .select('*')
     .eq('user_id', userId)
 
   if (error) return { data: [], error: error.message }
 
-  const items: InventoryItem[] = data.map((row) => ({
+  const rows = (data ?? []) as Array<{
+    id: string
+    user_id: string
+    item_type: string
+    item_id: string
+    purchased_at: string
+  }>
+
+  const items: InventoryItem[] = rows.map((row) => ({
     id: row.id,
     userId: row.user_id,
-    itemType: row.item_type as 'weapon' | 'box',
+    itemType: row.item_type as ShopItemType,
     itemId: row.item_id,
     purchasedAt: row.purchased_at,
   }))
@@ -29,7 +43,7 @@ export async function getInventory(
 export async function getEquipment(
   userId: string,
 ): Promise<{ data: PlayerEquipment | null; error: string | null }> {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('player_equipment')
     .select('*')
     .eq('user_id', userId)
@@ -37,12 +51,21 @@ export async function getEquipment(
 
   if (error) return { data: null, error: error.message }
 
+  const rawEquipment = data as {
+    user_id: string
+    equipped_weapon_id?: string | null
+    equipped_hand_id?: string | null
+    equipped_box_id?: string | null
+    updated_at: string
+  }
+
   return {
     data: {
-      userId: data.user_id,
-      equippedWeaponId: data.equipped_weapon_id ?? 'hand_basic',
-      equippedBoxId: data.equipped_box_id ?? 'small_box',
-      updatedAt: data.updated_at,
+      userId: rawEquipment.user_id,
+      equippedWeaponId: rawEquipment.equipped_weapon_id ?? 'tree_branch',
+      equippedHandId: rawEquipment.equipped_hand_id ?? 'bare_hand',
+      equippedBoxId: rawEquipment.equipped_box_id ?? 'basic_box',
+      updatedAt: rawEquipment.updated_at,
     },
     error: null,
   }
@@ -51,10 +74,10 @@ export async function getEquipment(
 // ── Comprar item (RPC) ───────────────────────────────────────
 
 export async function purchaseItem(
-  itemType: 'weapon' | 'box',
+  itemType: ShopItemType,
   itemId: string,
 ): Promise<PurchaseResult> {
-  const { data, error } = await supabase.rpc('purchase_item', {
+  const { data, error } = await (supabase as any).rpc('purchase_item', {
     p_item_type: itemType,
     p_item_id: itemId,
   })
@@ -83,7 +106,7 @@ export async function purchaseItem(
 
   return {
     ok: true,
-    itemType: (result.item_type ?? itemType) as 'weapon' | 'box',
+    itemType: (result.item_type ?? itemType) as ShopItemType,
     itemId: result.item_id ?? itemId,
   }
 }
@@ -91,10 +114,10 @@ export async function purchaseItem(
 // ── Equipar item (RPC) ───────────────────────────────────────
 
 export async function equipItem(
-  itemType: 'weapon' | 'box',
+  itemType: ShopItemType,
   itemId: string,
 ): Promise<EquipResult> {
-  const { data, error } = await supabase.rpc('equip_item', {
+  const { data, error } = await (supabase as any).rpc('equip_item', {
     p_item_type: itemType,
     p_item_id: itemId,
   })
@@ -109,7 +132,7 @@ export async function equipItem(
 
   return {
     ok: true,
-    itemType: (result.item_type ?? itemType) as 'weapon' | 'box',
+    itemType: (result.item_type ?? itemType) as ShopItemType,
     itemId: result.item_id ?? itemId,
   }
 }

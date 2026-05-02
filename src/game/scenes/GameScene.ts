@@ -79,8 +79,8 @@ export class GameScene extends Phaser.Scene {
     this.scale.on(Phaser.Scale.Events.RESIZE, this.handleResize, this)
 
     const weaponId =
-      (this.registry.get("equippedWeaponId") as string) || "hand_basic"
-    const boxId = (this.registry.get("equippedBoxId") as string) || "small_box"
+      (this.registry.get("equippedWeaponId") as string) || "tree_branch"
+    const boxId = (this.registry.get("equippedBoxId") as string) || "basic_box"
     const music = (this.registry.get("musicEnabled") as boolean) ?? true
     const sfx = (this.registry.get("sfxEnabled") as boolean) ?? true
     const vibration = (this.registry.get("vibrationEnabled") as boolean) ?? true

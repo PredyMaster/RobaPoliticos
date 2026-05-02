@@ -10,15 +10,26 @@ export async function getMissionsForUser(
   const today = new Date().toISOString().split('T')[0]
   const weekStart = getMonday(new Date()).toISOString().split('T')[0]
 
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('mission_progress')
     .select('*')
     .eq('user_id', userId)
 
   if (error) return { data: [], error: error.message }
 
+  const rows = (data ?? []) as Array<{
+    id: string
+    user_id: string
+    mission_id: string
+    progress: number
+    completed: boolean
+    claimed: boolean
+    date_key: string | null
+    updated_at: string
+  }>
+
   const progressMap = new Map<string, MissionProgress>()
-  for (const row of data) {
+  for (const row of rows) {
     const key = row.mission_id + '_' + (row.date_key ?? '')
     progressMap.set(key, {
       id: row.id,
@@ -65,7 +76,7 @@ export async function claimMissionReward(
     dateKey = getMonday(new Date()).toISOString().split('T')[0]
   }
 
-  const { data, error } = await supabase.rpc('claim_mission_reward', {
+  const { data, error } = await (supabase as any).rpc('claim_mission_reward', {
     p_mission_id: missionId,
     ...(dateKey ? { p_date_key: dateKey } : {}),
   })

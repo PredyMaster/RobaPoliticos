@@ -1,8 +1,9 @@
 import { useNavigate } from 'react-router-dom'
 import { usePlayerStore } from '../store/usePlayerStore'
 import { useInventoryStore } from '../store/useInventoryStore'
-import { WEAPONS_MAP } from '../game/data/weapons'
-import { BOXES_MAP } from '../game/data/boxes'
+import { getBox } from '../game/data/boxes'
+import { getHand } from '../game/data/hands'
+import { getWeapon } from '../game/data/weapons'
 import { C, FONT, cardStyle } from './shared/theme'
 
 const NAV = [
@@ -19,8 +20,9 @@ export function HomeScreen() {
   const wallet    = usePlayerStore((s) => s.wallet)
   const equipment = useInventoryStore((s) => s.equipment)
 
-  const weapon = equipment ? (WEAPONS_MAP.get(equipment.equippedWeaponId) ?? null) : null
-  const box    = equipment ? (BOXES_MAP.get(equipment.equippedBoxId) ?? null) : null
+  const weapon = equipment ? getWeapon(equipment.equippedWeaponId) : null
+  const hand   = equipment?.equippedHandId ? getHand(equipment.equippedHandId) : null
+  const box    = equipment ? getBox(equipment.equippedBoxId) : null
 
   return (
     <div
@@ -100,11 +102,16 @@ export function HomeScreen() {
       </div>
 
       {/* ── Equipped items ── */}
-      <div style={{ padding: '0 16px 16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+      <div style={{ padding: '0 16px 16px', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
         <EquipCard
           label="Arma equipada"
           name={weapon?.name ?? '—'}
           detail={weapon ? `${weapon.coinsPerHit} monedas/golpe` : 'Sin equipar'}
+        />
+        <EquipCard
+          label="Mano equipada"
+          name={hand?.name ?? '—'}
+          detail={hand ? `${hand.attack} ataque · ${hand.precision} precision` : 'Sin equipar'}
         />
         <EquipCard
           label="Caja equipada"

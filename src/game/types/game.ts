@@ -32,6 +32,16 @@ export type BoxItem = {
   visualAsset: string
 }
 
+export type HandItem = {
+  id: string
+  name: string
+  description: string
+  price: number
+  unlockLevel: number
+  attack: number
+  precision: number
+}
+
 // ── Monedas ─────────────────────────────────────────────────
 
 export type CoinTypeId =

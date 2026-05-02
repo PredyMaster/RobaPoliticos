@@ -16,7 +16,7 @@ export class CatchBox extends Phaser.GameObjects.Image {
 
   constructor(scene: Phaser.Scene, config: BoxItem) {
     const x = SCENE_W / 2
-    const y = GROUND_Y - config.height / 2
+    const y = GROUND_Y - config.height / 2 - 75
     super(scene, x, y, "catch_box")
     this.cfg = config
     scene.add.existing(this)

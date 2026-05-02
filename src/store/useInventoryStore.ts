@@ -1,9 +1,16 @@
 import { create } from 'zustand'
-import type { InventoryItem, PlayerEquipment, PurchaseResult, EquipResult } from '../game/types/economy'
-import type { Weapon, BoxItem } from '../game/types/game'
+import type {
+  EquipResult,
+  InventoryItem,
+  PlayerEquipment,
+  PurchaseResult,
+  ShopItemType,
+} from '../game/types/economy'
+import type { BoxItem, HandItem, Weapon } from '../game/types/game'
 import { getInventory, getEquipment, purchaseItem, equipItem } from '../services/supabase/inventory'
-import { WEAPONS_MAP } from '../game/data/weapons'
-import { BOXES_MAP } from '../game/data/boxes'
+import { getBox } from '../game/data/boxes'
+import { getHand } from '../game/data/hands'
+import { getWeapon } from '../game/data/weapons'
 import { usePlayerStore } from './usePlayerStore'
 
 type InventoryState = {
@@ -18,15 +25,16 @@ type InventoryActions = {
   loadInventory: (userId: string) => Promise<void>
 
   // Compra un item: descuenta monedas en BD y actualiza estado local
-  purchase: (itemType: 'weapon' | 'box', itemId: string) => Promise<PurchaseResult>
+  purchase: (itemType: ShopItemType, itemId: string) => Promise<PurchaseResult>
 
   // Equipa un item del inventario y actualiza estado local
-  equip: (itemType: 'weapon' | 'box', itemId: string) => Promise<EquipResult>
+  equip: (itemType: ShopItemType, itemId: string) => Promise<EquipResult>
 
   // Selectores derivados
   equippedWeapon: () => Weapon | null
+  equippedHand: () => HandItem | null
   equippedBox: () => BoxItem | null
-  ownsItem: (itemType: 'weapon' | 'box', itemId: string) => boolean
+  ownsItem: (itemType: ShopItemType, itemId: string) => boolean
 }
 
 export const useInventoryStore = create<InventoryState & InventoryActions>((set, get) => ({
@@ -88,7 +96,9 @@ export const useInventoryStore = create<InventoryState & InventoryActions>((set,
             ...state.equipment,
             ...(itemType === 'weapon'
               ? { equippedWeaponId: itemId }
-              : { equippedBoxId: itemId }),
+              : itemType === 'hand'
+                ? { equippedHandId: itemId }
+                : { equippedBoxId: itemId }),
             updatedAt: new Date().toISOString(),
           },
         }
@@ -101,13 +111,19 @@ export const useInventoryStore = create<InventoryState & InventoryActions>((set,
   equippedWeapon: () => {
     const { equipment } = get()
     if (!equipment) return null
-    return WEAPONS_MAP.get(equipment.equippedWeaponId) ?? null
+    return getWeapon(equipment.equippedWeaponId)
+  },
+
+  equippedHand: () => {
+    const { equipment } = get()
+    if (!equipment?.equippedHandId) return null
+    return getHand(equipment.equippedHandId)
   },
 
   equippedBox: () => {
     const { equipment } = get()
     if (!equipment) return null
-    return BOXES_MAP.get(equipment.equippedBoxId) ?? null
+    return getBox(equipment.equippedBoxId)
   },
 
   ownsItem: (itemType, itemId) => {

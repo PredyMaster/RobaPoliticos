@@ -1,5 +1,12 @@
-import { useRef, useEffect, useCallback, useState } from "react"
-import { createPortal } from "react-dom"
+import {
+  Component,
+  useRef,
+  useEffect,
+  useCallback,
+  useState,
+  type ErrorInfo,
+  type ReactNode,
+} from "react"
 import { useNavigate } from "react-router-dom"
 import { useGameStore } from "../store/useGameStore"
 import { useInventoryStore } from "../store/useInventoryStore"
@@ -80,37 +87,6 @@ function GameHUD({ onPause }: { onPause: () => void }) {
       >
         II
       </button>
-    </div>
-  )
-}
-
-// ── Coin counter overlay ──────────────────────────────────────
-
-function CoinCounter() {
-  const runCoins = useGameStore((s) => s.runCoins)
-
-  return (
-    <div
-      style={{
-        position: "absolute",
-        top: 160,
-        left: 160,
-        zIndex: 50,
-        display: "flex",
-        alignItems: "center",
-        gap: 6,
-        background: "rgba(0,0,0,0.6)",
-        borderRadius: 10,
-        padding: "8px 14px",
-        pointerEvents: "none",
-      }}
-    >
-      <span style={{ fontSize: 20 }}>🪙</span>
-      <span
-        style={{ color: "#fff", fontSize: 24, fontWeight: 800, lineHeight: 1 }}
-      >
-        {runCoins}
-      </span>
     </div>
   )
 }
@@ -283,14 +259,76 @@ const BG_URLS = [
   "/assets/backgrounds/bg8.jpg",
 ]
 
-type ShopDebugState = {
-  count: number
-  lastSource: string
-  lastAt: string
-}
-
 type ShopBridgeWindow = Window & {
   __openShopOverlay?: (source?: string) => void
+}
+
+type ShopRenderBoundaryProps = {
+  children: ReactNode
+  onError: (message: string) => void
+  resetKey: string
+}
+
+type ShopRenderBoundaryState = {
+  error: string | null
+}
+
+class ShopRenderBoundary extends Component<
+  ShopRenderBoundaryProps,
+  ShopRenderBoundaryState
+> {
+  state: ShopRenderBoundaryState = {
+    error: null,
+  }
+
+  static getDerivedStateFromError(error: Error): ShopRenderBoundaryState {
+    return { error: error.message }
+  }
+
+  componentDidCatch(error: Error, info: ErrorInfo): void {
+    const details = info.componentStack
+      ? `${error.message} :: ${info.componentStack.trim()}`
+      : error.message
+    this.props.onError(details)
+  }
+
+  componentDidUpdate(prevProps: ShopRenderBoundaryProps): void {
+    if (prevProps.resetKey !== this.props.resetKey && this.state.error) {
+      this.setState({ error: null })
+    }
+  }
+
+  render() {
+    if (this.state.error) {
+      return (
+        <div
+          style={{
+            position: "absolute",
+            inset: 24,
+            zIndex: 1100,
+            borderRadius: 18,
+            border: "2px solid #fecaca",
+            background: "rgba(127, 29, 29, 0.96)",
+            color: "#fff",
+            padding: "18px 20px",
+            fontFamily: FONT,
+            overflow: "auto",
+          }}
+        >
+          <strong style={{ display: "block", marginBottom: 8 }}>
+            ShopScreen ha fallado al renderizar
+          </strong>
+          <div
+            style={{ whiteSpace: "pre-wrap", fontSize: 13, lineHeight: 1.4 }}
+          >
+            {this.state.error}
+          </div>
+        </div>
+      )
+    }
+
+    return this.props.children
+  }
 }
 
 export function GameScreen() {
@@ -299,13 +337,11 @@ export function GameScreen() {
   const gameRef = useRef<Phaser.Game | null>(null)
   const bgImgRef = useRef<HTMLImageElement>(null)
   const [shopOverlayOpen, setShopOverlayOpen] = useState(false)
-  const [shopDebug, setShopDebug] = useState<ShopDebugState | null>(null)
 
   // ── Stores ────────────────────────────────────────────────
   const isRunActive = useGameStore((s) => s.isRunActive)
   const isPaused = useGameStore((s) => s.isPaused)
   const isShopOpen = useGameStore((s) => s.isShopOpen)
-  const startRun = useGameStore((s) => s.startRun)
   const pauseRun = useGameStore((s) => s.pauseRun)
   const resumeRun = useGameStore((s) => s.resumeRun)
   const closeShop = useGameStore((s) => s.closeShop)
@@ -323,29 +359,21 @@ export function GameScreen() {
   const isShopVisible = isShopOpen || shopOverlayOpen
 
   useEffect(() => {
-    if (!isShopVisible) return
-    setShopDebug((prev) => ({
-      count: (prev?.count ?? 0) + 1,
-      lastSource: "render_shop_overlay",
-      lastAt: new Date().toLocaleTimeString("es-ES"),
-    }))
+    if (isShopVisible) return
   }, [isShopVisible])
 
   // Fuerza el fondo del body al inicial nada más montar (sobrescribe cualquier caché de index.html)
   useEffect(() => {
     document.body.style.background = `#1a1a2e url('${BG_URLS[0]}') center center / cover no-repeat`
-    return () => { document.body.style.background = "" }
+    return () => {
+      document.body.style.background = ""
+    }
   }, [])
 
   useEffect(() => {
     const bridgeWindow = window as ShopBridgeWindow
-    bridgeWindow.__openShopOverlay = (source = "window_bridge") => {
+    bridgeWindow.__openShopOverlay = (_source = "window_bridge") => {
       setShopOverlayOpen(true)
-      setShopDebug((prev) => ({
-        count: (prev?.count ?? 0) + 1,
-        lastSource: source,
-        lastAt: new Date().toLocaleTimeString("es-ES"),
-      }))
     }
 
     return () => {
@@ -360,8 +388,8 @@ export function GameScreen() {
     if (!containerRef.current) return
 
     gameRef.current = createGame(containerRef.current, {
-      equippedWeaponId: equipment?.equippedWeaponId ?? "hand_basic",
-      equippedBoxId: equipment?.equippedBoxId ?? "small_box",
+      equippedWeaponId: equipment?.equippedWeaponId ?? "tree_branch",
+      equippedBoxId: equipment?.equippedBoxId ?? "basic_box",
       musicEnabled,
       sfxEnabled,
       vibrationEnabled,
@@ -389,6 +417,8 @@ export function GameScreen() {
     closeShop()
     resumeRun()
   }, [closeShop, resumeRun])
+
+  const handleShopRenderError = useCallback((_message: string) => {}, [])
 
   // ── Bridge Phaser → React ─────────────────────────────────
   useEffect(() => {
@@ -484,59 +514,13 @@ export function GameScreen() {
       <div
         ref={containerRef}
         id="phaser-container"
-        style={{ position: "relative", width: "100%", height: "100%", zIndex: 1 }}
+        style={{
+          position: "relative",
+          width: "100%",
+          height: "100%",
+          zIndex: 1,
+        }}
       />
-
-      {/* Overlay de inicio (sobre el canvas de Phaser mientras no hay partida activa) */}
-      {!isRunActive && (
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 14,
-            zIndex: 2,
-            pointerEvents: "none", // pasa eventos al canvas salvo los botones
-          }}
-        >
-          <button
-            onClick={startRun}
-            style={{
-              padding: "16px 48px",
-              background: C.gold,
-              border: "none",
-              borderRadius: 12,
-              color: "#1a1a2e",
-              fontSize: 18,
-              fontWeight: 700,
-              cursor: "pointer",
-              fontFamily: FONT,
-              pointerEvents: "auto",
-            }}
-          >
-            ▶ Iniciar Partida
-          </button>
-          <button
-            onClick={() => navigate("/home")}
-            style={{
-              background: "none",
-              border: "none",
-              color: "rgba(255,255,255,0.45)",
-              fontSize: 13,
-              cursor: "pointer",
-              fontFamily: FONT,
-              pointerEvents: "auto",
-            }}
-          >
-            ← Volver al menú
-          </button>
-        </div>
-      )}
-
-      <CoinCounter />
 
       {isRunActive && <GameHUD onPause={pauseRun} />}
 
@@ -544,54 +528,23 @@ export function GameScreen() {
         <PauseOverlay onResume={resumeRun} onExit={handleExit} />
       )}
 
-      {isShopVisible &&
-        createPortal(
-          <div
-            style={{
-              position: "fixed",
-              inset: 0,
-              zIndex: 1000,
-              background: C.bg,
-            }}
+      {isShopVisible && (
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            zIndex: 1000,
+            background: C.bg,
+          }}
+        >
+          <ShopRenderBoundary
+            resetKey={`${isShopOpen}-${shopOverlayOpen}-${isShopVisible}`}
+            onError={handleShopRenderError}
           >
             <ShopScreen embedded onBack={handleCloseShop} />
-          </div>,
-          document.body,
-        )}
-
-      {shopDebug &&
-        createPortal(
-          <div
-            style={{
-              position: "fixed",
-              top: 12,
-              left: 12,
-              zIndex: 2200,
-              background: "rgba(190, 24, 93, 0.96)",
-              color: "#fff",
-              border: "2px solid #fecdd3",
-              borderRadius: 12,
-              padding: "10px 12px",
-              fontFamily: FONT,
-              fontSize: 13,
-              lineHeight: 1.35,
-              boxShadow: "0 12px 40px rgba(0,0,0,0.35)",
-              pointerEvents: "none",
-              maxWidth: 340,
-            }}
-          >
-            <strong style={{ display: "block", marginBottom: 4 }}>
-              Diagnostico Tienda React
-            </strong>
-            <div>ultimo evento: {shopDebug.lastSource}</div>
-            <div>hora: {shopDebug.lastAt}</div>
-            <div>contador: {shopDebug.count}</div>
-            <div>isShopOpen store: {String(isShopOpen)}</div>
-            <div>shopOverlayOpen local: {String(shopOverlayOpen)}</div>
-            <div>isShopVisible final: {String(isShopVisible)}</div>
-          </div>,
-          document.body,
-        )}
+          </ShopRenderBoundary>
+        </div>
+      )}
     </div>
   )
 }

@@ -1,98 +1,46 @@
 import type { BoxItem } from '../types/game'
+import { SHOP_BOXES } from './shopCatalog'
 
-export const BOXES: BoxItem[] = [
-  {
-    id: 'small_box',
-    name: 'Caja pequeña',
-    description: 'La caja básica. Pequeña y difícil de acertar.',
-    price: 0,
-    unlockLevel: 1,
-    width: 384,
-    height: 240,
-    speed: 220,
-    acceleration: 0,
-    magnetPower: 0,
-    multiplier: 1.0,
-    visualAsset: 'box_small',
-  },
-  {
-    id: 'wide_box',
-    name: 'Caja ancha',
-    description: 'Más superficie para atrapar monedas. Mucho más fácil.',
-    price: 300,
-    unlockLevel: 1,
-    width: 560,
-    height: 240,
-    speed: 220,
-    acceleration: 0,
-    magnetPower: 0,
-    multiplier: 1.0,
-    visualAsset: 'box_wide',
-  },
-  {
-    id: 'fast_box',
-    name: 'Caja rápida',
-    description: 'Se mueve más deprisa. Mejor para monedas laterales.',
-    price: 800,
-    unlockLevel: 2,
-    width: 440,
-    height: 240,
-    speed: 380,
-    acceleration: 40,
-    magnetPower: 0,
-    multiplier: 1.0,
-    visualAsset: 'box_fast',
-  },
-  {
-    id: 'magnet_box',
-    name: 'Caja imán',
-    description: 'Atrae las monedas cercanas hacia ella.',
-    price: 2000,
-    unlockLevel: 4,
-    width: 480,
-    height: 260,
-    speed: 260,
-    acceleration: 0,
-    magnetPower: 180,
-    multiplier: 1.0,
-    visualAsset: 'box_magnet',
-  },
-  {
-    id: 'golden_box',
-    name: 'Caja dorada',
-    description: 'Multiplica el valor de cada moneda recogida.',
-    price: 6000,
-    unlockLevel: 6,
-    width: 480,
-    height: 260,
-    speed: 260,
-    acceleration: 0,
-    magnetPower: 0,
-    multiplier: 1.8,
-    visualAsset: 'box_golden',
-  },
-  {
-    id: 'premium_box',
-    name: 'Caja premium',
-    description: 'Grande, rápida y con un pequeño efecto de atracción.',
-    price: 20000,
-    unlockLevel: 9,
-    width: 680,
-    height: 280,
-    speed: 340,
-    acceleration: 30,
-    magnetPower: 80,
-    multiplier: 1.5,
-    visualAsset: 'box_premium',
-  },
-]
+function magnetPowerForBox(id: string, bonus: number): number {
+  if (id === 'magnet_box') return 180
+  if (id === 'ultimate_box') return 120
+  if (bonus > 1.2) return 80
+  return 0
+}
+
+export const BOXES: BoxItem[] = SHOP_BOXES.map((box) => ({
+  id: box.id,
+  name: box.name,
+  description: box.description,
+  price: box.price,
+  unlockLevel: box.unlockLevel,
+  width: Math.round(380 * box.size),
+  height: Math.round(230 * Math.min(box.size, 1.35)),
+  speed: Math.round(220 * box.speed),
+  acceleration: Math.max(0, Math.round((box.speed - 1) * 120)),
+  magnetPower: magnetPowerForBox(box.id, box.bonus),
+  multiplier: box.bonus,
+  visualAsset: `shop_box_${box.id}`,
+}))
 
 export const BOXES_MAP = new Map<string, BoxItem>(
   BOXES.map((b) => [b.id, b]),
 )
 
+const BOX_ALIASES: Record<string, string> = {
+  small_box: 'basic_box',
+  fast_box: 'wheel_box',
+  golden_box: 'bonus_box',
+  premium_box: 'ultimate_box',
+}
+
+export function resolveBoxId(id: string): string {
+  if (BOXES_MAP.has(id)) return id
+  const alias = BOX_ALIASES[id]
+  if (alias && BOXES_MAP.has(alias)) return alias
+  return BOXES[0].id
+}
+
 export function getBox(id: string): BoxItem {
-  const b = BOXES_MAP.get(id)
-  if (!b) throw new Error(`Box not found: ${id}`)
-  return b
+  return BOXES_MAP.get(resolveBoxId(id)) ?? BOXES[0]
 }

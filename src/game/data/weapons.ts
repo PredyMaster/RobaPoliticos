@@ -1,142 +1,59 @@
 import type { Weapon } from '../types/game'
+import { SHOP_WEAPONS } from './shopCatalog'
 
-export const WEAPONS: Weapon[] = [
-  {
-    id: 'hand_basic',
-    name: 'Mano básica',
-    description: 'La técnica clásica. Barata pero efectiva para empezar.',
-    price: 0,
-    unlockLevel: 1,
-    coinsPerHit: 3,
-    force: 280,
-    cooldown: 0.4,
-    criticalChance: 0.04,
-    criticalMultiplier: 1.8,
-    spread: 0.25,
-    rarityBonus: 0,
-    visualAsset: 'weapon_hand_basic',
-    soundEffect: 'sfx_hit_hand',
-  },
-  {
-    id: 'flip_flop',
-    name: 'Chancla',
-    description: 'Rápida como un rayo y más dolorosa de lo que parece.',
-    price: 150,
-    unlockLevel: 1,
-    coinsPerHit: 5,
-    force: 320,
-    cooldown: 0.35,
-    criticalChance: 0.06,
-    criticalMultiplier: 2.0,
-    spread: 0.3,
-    rarityBonus: 0,
-    visualAsset: 'weapon_flip_flop',
-    soundEffect: 'sfx_hit_flip_flop',
-  },
-  {
-    id: 'hammer',
-    name: 'Martillo',
-    description: 'Golpe contundente. Las monedas salen disparadas con fuerza.',
-    price: 500,
-    unlockLevel: 2,
-    coinsPerHit: 8,
-    force: 480,
-    cooldown: 0.6,
-    criticalChance: 0.08,
-    criticalMultiplier: 2.2,
-    spread: 0.2,
-    rarityBonus: 0.05,
-    visualAsset: 'weapon_hammer',
-    soundEffect: 'sfx_hit_hammer',
-  },
-  {
-    id: 'baseball_bat',
-    name: 'Bate de béisbol',
-    description: 'Swing lateral amplio. Las monedas salen en abanico.',
-    price: 1200,
-    unlockLevel: 3,
-    coinsPerHit: 10,
-    force: 420,
-    cooldown: 0.55,
-    criticalChance: 0.1,
-    criticalMultiplier: 2.3,
-    spread: 0.6,
-    rarityBonus: 0.08,
-    visualAsset: 'weapon_baseball_bat',
-    soundEffect: 'sfx_hit_bat',
-  },
-  {
-    id: 'boxing_glove',
-    name: 'Guante de boxeo',
-    description: 'Máximo knockback. Alta probabilidad de crítico.',
-    price: 2500,
-    unlockLevel: 4,
-    coinsPerHit: 12,
-    force: 560,
-    cooldown: 0.65,
-    criticalChance: 0.15,
-    criticalMultiplier: 2.5,
-    spread: 0.35,
-    rarityBonus: 0.1,
-    visualAsset: 'weapon_boxing_glove',
-    soundEffect: 'sfx_hit_glove',
-  },
-  {
-    id: 'money_gun',
-    name: 'Pistola de billetes',
-    description: 'Dispara monedas en línea recta. Precisión máxima.',
-    price: 5000,
-    unlockLevel: 5,
-    coinsPerHit: 15,
-    force: 700,
-    cooldown: 0.3,
-    criticalChance: 0.12,
-    criticalMultiplier: 2.4,
-    spread: 0.1,
-    rarityBonus: 0.15,
-    visualAsset: 'weapon_money_gun',
-    soundEffect: 'sfx_hit_gun',
-  },
-  {
-    id: 'golden_mallet',
-    name: 'Mazo dorado',
-    description: 'Golpe pesado con alta probabilidad de monedas raras.',
-    price: 12000,
-    unlockLevel: 7,
-    coinsPerHit: 18,
-    force: 520,
-    cooldown: 0.8,
-    criticalChance: 0.18,
-    criticalMultiplier: 2.8,
-    spread: 0.45,
-    rarityBonus: 0.35,
-    visualAsset: 'weapon_golden_mallet',
-    soundEffect: 'sfx_hit_mallet',
-  },
-  {
-    id: 'money_bazooka',
-    name: 'Bazooka de dinero',
-    description: 'Explosión de monedas. Cooldown alto pero devastador.',
-    price: 30000,
-    unlockLevel: 10,
-    coinsPerHit: 30,
-    force: 900,
-    cooldown: 1.4,
-    criticalChance: 0.25,
-    criticalMultiplier: 3.5,
-    spread: 0.8,
-    rarityBonus: 0.4,
-    visualAsset: 'weapon_money_bazooka',
-    soundEffect: 'sfx_hit_bazooka',
-  },
-]
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value))
+}
+
+function soundEffectForTier(tier: number): string {
+  if (tier <= 2) return 'sfx_slap_1'
+  if (tier <= 4) return 'sfx_slap_2'
+  if (tier === 5) return 'sfx_slap_3'
+  return 'sfx_slap_4'
+}
+
+export const WEAPONS: Weapon[] = SHOP_WEAPONS.map((weapon) => ({
+  id: weapon.id,
+  name: weapon.name,
+  description: weapon.description,
+  price: weapon.price,
+  unlockLevel: weapon.unlockLevel,
+  coinsPerHit: Math.max(3, Math.round(weapon.attack / 4)),
+  force: 220 + weapon.attack * 9,
+  cooldown: Number(
+    clamp(0.62 - weapon.precision / 250 + weapon.attack / 420, 0.34, 0.72).toFixed(2),
+  ),
+  criticalChance: Number(clamp(weapon.precision / 400, 0.08, 0.24).toFixed(2)),
+  criticalMultiplier: Number((1.7 + weapon.attack / 50).toFixed(2)),
+  spread: Number(clamp(0.7 - weapon.precision / 140, 0.12, 0.45).toFixed(2)),
+  rarityBonus: Number(
+    clamp((weapon.attack + weapon.precision - 50) / 250, 0, 0.38).toFixed(2),
+  ),
+  visualAsset: `shop_weapon_${weapon.id}`,
+  soundEffect: soundEffectForTier(weapon.tier),
+}))
 
 export const WEAPONS_MAP = new Map<string, Weapon>(
   WEAPONS.map((w) => [w.id, w]),
 )
 
+const WEAPON_ALIASES: Record<string, string> = {
+  hand_basic: 'tree_branch',
+  flip_flop: 'wrench',
+  baseball_bat: 'bat',
+  boxing_glove: 'pan',
+  money_gun: 'pan',
+  golden_mallet: 'golden_hammer',
+  money_bazooka: 'golden_hammer',
+}
+
+export function resolveWeaponId(id: string): string {
+  if (WEAPONS_MAP.has(id)) return id
+  const alias = WEAPON_ALIASES[id]
+  if (alias && WEAPONS_MAP.has(alias)) return alias
+  return WEAPONS[0].id
+}
+
 export function getWeapon(id: string): Weapon {
-  const w = WEAPONS_MAP.get(id)
-  if (!w) throw new Error(`Weapon not found: ${id}`)
-  return w
+  return WEAPONS_MAP.get(resolveWeaponId(id)) ?? WEAPONS[0]
 }
