@@ -5,6 +5,7 @@ import type {
   PlayerPreferences,
 } from "../game/types/player"
 import type { Wallet } from "../game/types/economy"
+import { EventBus } from "../game/EventBus"
 import { getProfile } from "../services/local/profile"
 import { getWallet } from "../services/local/wallet"
 import { DEFAULT_PREFERENCES } from "../game/types/player"
@@ -78,6 +79,11 @@ function savePrefsToStorage(prefs: PlayerPreferences): void {
   }
 }
 
+function emitWalletUpdated(wallet: Wallet | null): void {
+  if (!wallet) return
+  EventBus.emit("WALLET_UPDATED", { currentCoins: wallet.currentCoins })
+}
+
 export const usePlayerStore = create<PlayerState & PlayerActions>(
   (set, get) => ({
     session: null,
@@ -112,6 +118,7 @@ export const usePlayerStore = create<PlayerState & PlayerActions>(
         wallet: walletResult.data,
         isLoadingPlayer: false,
       })
+      emitWalletUpdated(walletResult.data)
     },
 
     refreshWallet: async () => {
@@ -119,7 +126,10 @@ export const usePlayerStore = create<PlayerState & PlayerActions>(
       if (!session) return
 
       const { data, error } = await getWallet(session.userId)
-      if (!error && data) set({ wallet: data })
+      if (!error && data) {
+        set({ wallet: data })
+        emitWalletUpdated(data)
+      }
     },
 
     setProfile: (profile) => set({ profile }),
@@ -138,6 +148,7 @@ export const usePlayerStore = create<PlayerState & PlayerActions>(
       }))
 
       set({ wallet: next.wallet })
+      emitWalletUpdated(next.wallet)
     },
 
     setPreferences: (partial) => {
@@ -156,6 +167,7 @@ export const usePlayerStore = create<PlayerState & PlayerActions>(
         isLoadingSession: false,
         isLoadingPlayer: false,
       })
+      emitWalletUpdated(reset.wallet)
     },
 
     resetRunState: async () => {
@@ -168,6 +180,7 @@ export const usePlayerStore = create<PlayerState & PlayerActions>(
         isLoadingSession: false,
         isLoadingPlayer: false,
       })
+      emitWalletUpdated(reset.wallet)
     },
   }),
 )

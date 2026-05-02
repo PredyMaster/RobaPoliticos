@@ -12,6 +12,8 @@ export class WeaponCursor extends Phaser.GameObjects.Image {
 
   private swinging = false
   private isDesktop: boolean
+  private lastTouchX = 0
+  private lastTouchY = 0
   // Visual-only scale multiplier; hitZone always stays at WEAPON_W×WEAPON_H
   private baseScale: number
   private debugGfx?: Phaser.GameObjects.Graphics
@@ -83,18 +85,20 @@ export class WeaponCursor extends Phaser.GameObjects.Image {
 
   private onMove(pointer: Phaser.Input.Pointer): void {
     this.setPosition(pointer.x, pointer.y)
-    this.lastVelocity = { x: pointer.velocity.x, y: pointer.velocity.y }
     this.syncHitZone()
 
     if (this.isDesktop) {
+      this.lastVelocity = { x: pointer.velocity.x, y: pointer.velocity.y }
       this.setVisible(true)
     } else if (pointer.isDown) {
-      const dx = pointer.x - pointer.downX
-      const dy = pointer.y - pointer.downY
+      const dx = pointer.x - this.lastTouchX
+      const dy = pointer.y - this.lastTouchY
       if (dx !== 0 || dy !== 0) {
-        // On Android/Capacitor, pointer.velocity is unreliable; use total displacement instead
+        // On Android/Capacitor, pointer.velocity is unreliable; use per-move delta instead
         this.lastVelocity = { x: dx, y: dy }
       }
+      this.lastTouchX = pointer.x
+      this.lastTouchY = pointer.y
     }
   }
 
@@ -112,6 +116,9 @@ export class WeaponCursor extends Phaser.GameObjects.Image {
   private onDown(pointer: Phaser.Input.Pointer): void {
     this.setPosition(pointer.x, pointer.y)
     this.setVisible(true)
+    this.lastVelocity = { x: 0, y: 0 }
+    this.lastTouchX = pointer.x
+    this.lastTouchY = pointer.y
     this.syncHitZone()
   }
 
@@ -120,6 +127,8 @@ export class WeaponCursor extends Phaser.GameObjects.Image {
       this.setVisible(false)
     }
     this.swinging = false
+    this.lastTouchX = this.x
+    this.lastTouchY = this.y
   }
 
   playSwing(): void {

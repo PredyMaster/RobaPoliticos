@@ -2,6 +2,7 @@ import * as Phaser from "phaser"
 import { EventBus } from "../EventBus"
 import type { ComboState } from "../types/game"
 import { useGameStore } from "../../store/useGameStore"
+import { usePlayerStore } from "../../store/usePlayerStore"
 
 // UIScene corre en paralelo sobre GameScene.
 // React gestiona el HUD principal (GameHUD); esta escena se reserva
@@ -41,7 +42,7 @@ export class UIScene extends Phaser.Scene {
   private timeRemaining = gameTime
   private timerActive = false
   private runStarted = false
-  private currentCoins = 0
+  private runCoinsCollected = 0
   private comboBaseY = 300
   private shopButton!: Phaser.GameObjects.Container
   private shopButtonHitArea!: Phaser.GameObjects.Zone
@@ -131,13 +132,16 @@ export class UIScene extends Phaser.Scene {
 
     EventBus.on("COMBO_UPDATED", this.onComboUpdated, this)
     EventBus.on("RUN_SCORE_UPDATED", this.onScoreUpdated, this)
+    EventBus.on("WALLET_UPDATED", this.onWalletUpdated, this)
     EventBus.on("RUN_STARTED", this.onRunStarted, this)
     EventBus.on("RUN_PAUSED", this.onRunPaused, this)
     EventBus.on("RUN_RESUMED", this.onRunResumed, this)
 
     const { isPaused } = useGameStore.getState()
+    const walletCoins = usePlayerStore.getState().wallet?.currentCoins ?? 0
     this.runStarted = true
     this.timerActive = !isPaused
+    this.onWalletUpdated({ currentCoins: walletCoins })
     this.setShopButtonEnabled(!isPaused)
     if (isPaused) this.onRunPaused()
     this.handleResize()
@@ -189,7 +193,7 @@ export class UIScene extends Phaser.Scene {
   private onTimeUp(): void {
     this.runStarted = false
     EventBus.emit("RUN_PAUSED")
-    this.scene.launch("GameOverScene", { coins: this.currentCoins })
+    this.scene.launch("GameOverScene", { coins: this.runCoinsCollected })
   }
 
   private createShopButton(): void {
@@ -308,10 +312,10 @@ export class UIScene extends Phaser.Scene {
 
   private onRunStarted(): void {
     this.runStarted = true
-    this.coinCounter.setText("0")
-    this.updateCoinIcon(0)
-    this.resizeBg()
-    this.currentCoins = 0
+    this.runCoinsCollected = 0
+    this.onWalletUpdated({
+      currentCoins: usePlayerStore.getState().wallet?.currentCoins ?? 0,
+    })
     this.timeRemaining = gameTime
     this.timerActive = true
     this.timerText.setText(this.formatTime(gameTime))
@@ -348,10 +352,17 @@ export class UIScene extends Phaser.Scene {
     runScore: number
     totalCoins: number
   }): void {
-    this.coinCounter.setText(`${totalCoins}`)
-    this.updateCoinIcon(totalCoins)
+    this.runCoinsCollected = totalCoins
+  }
+
+  private onWalletUpdated({
+    currentCoins,
+  }: {
+    currentCoins: number
+  }): void {
+    this.coinCounter.setText(`${currentCoins}`)
+    this.updateCoinIcon(currentCoins)
     this.resizeBg()
-    this.currentCoins = totalCoins
   }
 
   private resizeBg(): void {
@@ -432,6 +443,7 @@ export class UIScene extends Phaser.Scene {
     this.scale.off(Phaser.Scale.Events.RESIZE, this.handleResize, this)
     EventBus.off("COMBO_UPDATED", this.onComboUpdated, this)
     EventBus.off("RUN_SCORE_UPDATED", this.onScoreUpdated, this)
+    EventBus.off("WALLET_UPDATED", this.onWalletUpdated, this)
     EventBus.off("RUN_STARTED", this.onRunStarted, this)
     EventBus.off("RUN_PAUSED", this.onRunPaused, this)
     EventBus.off("RUN_RESUMED", this.onRunResumed, this)

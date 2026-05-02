@@ -156,6 +156,7 @@ export type GameEventMap = {
   RUN_STARTED: undefined
   RUN_SCORE_UPDATED: { runScore: number; totalCoins: number }
   COINS_COLLECTED: { amount: number; coinType: CoinTypeId }
+  WALLET_UPDATED: { currentCoins: number }
   COMBO_UPDATED: ComboState
   RUN_PAUSED: undefined
   RUN_RESUMED: undefined

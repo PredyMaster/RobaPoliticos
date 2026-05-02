@@ -5,7 +5,7 @@ import type { SwipeHitEvent } from "../systems/SwipeSystem"
 const PLAYER_W = 464
 const PLAYER_H = 515
 const VISUAL_SCALE = 0.9
-const HITBOX_SCALE = 0.8
+const HITBOX_SCALE = 0.6
 const HITBOX_W = PLAYER_W * HITBOX_SCALE
 const HITBOX_H = PLAYER_H * HITBOX_SCALE
 
