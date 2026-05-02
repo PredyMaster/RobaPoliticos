@@ -41,6 +41,8 @@ export class PlayerCharacter extends Phaser.GameObjects.Sprite {
   }
 
   private onSwipeHit(e: SwipeHitEvent): void {
+    if (!e.didHit) return
+
     const textureKey =
       e.strength >= HARD_SLAP_THRESHOLD
         ? "player_hard_slap"

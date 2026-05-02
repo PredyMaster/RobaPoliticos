@@ -41,6 +41,10 @@ export async function submitRun(run: RunResult): Promise<SubmitRunResult> {
     return { ok: false, error: 'weapon_not_owned' }
   }
 
+  if (!hasOwnedItem(current, 'hand', run.equippedHandId)) {
+    return { ok: false, error: 'hand_not_owned' }
+  }
+
   if (!hasOwnedItem(current, 'box', run.equippedBoxId)) {
     return { ok: false, error: 'box_not_owned' }
   }
@@ -53,7 +57,7 @@ export async function submitRun(run: RunResult): Promise<SubmitRunResult> {
   }
 
   const newTotalScore = current.wallet.totalScore + run.scoreGained
-  const newCoins = current.wallet.currentCoins + run.coinsCollected
+  const newCoins = current.wallet.currentCoins
   const newLevel = calculateLevel(newTotalScore)
 
   saveLocalData({
@@ -66,7 +70,6 @@ export async function submitRun(run: RunResult): Promise<SubmitRunResult> {
     wallet: {
       ...current.wallet,
       totalScore: newTotalScore,
-      currentCoins: newCoins,
       updatedAt: createdAt,
     },
     runs: [storedRun, ...current.runs],

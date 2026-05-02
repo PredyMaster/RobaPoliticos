@@ -1,5 +1,6 @@
 import * as Phaser from "phaser"
 import { EventBus } from "../EventBus"
+import { listCombatCursorAssets } from "../data/combatLoadouts"
 import { toneDataUrl } from "../utils/audio"
 
 const W = 1920
@@ -7,7 +8,7 @@ const H = 1080
 
 // Pon estos archivos en public/assets/ para reemplazar los placeholders:
 //   player.png        464×515   (político de cuerpo entero, pies abajo, PNG transparente)
-//   weapon_cursor.png 264×242   (mano+arma apuntando →, mango en el lado IZQUIERDO)
+//   hands_weapons/...           (mano+arma apuntando →, mango en el lado IZQUIERDO)
 //   catch_box.png     768×480   (caja/maletín, PNG transparente)
 //   coin.png          ―         (moneda que sale al golpear al player)
 //   bg.jpg            1920×1080 (fondo de escena, opcional)
@@ -35,6 +36,9 @@ const REAL_SPRITES: Record<string, string> = {
   music_off: "assets/ui/music_off.png",
   sound_on: "assets/ui/sound_on.png",
   sound_off: "assets/ui/sound_off.png",
+  ...Object.fromEntries(
+    listCombatCursorAssets().map(({ key, path }) => [key, path]),
+  ),
 }
 
 export class PreloadScene extends Phaser.Scene {
@@ -153,9 +157,16 @@ export class PreloadScene extends Phaser.Scene {
         gfx.fillStyle(0xf4c542)
         gfx.fillRect(0, 110, 200, 22)
         gfx.fillTriangle(200, 90, 200, 152, 264, 121)
-        gfx.generateTexture("weapon_cursor", 264, 242)
+        gfx.generateTexture(key, 215, 350)
         break
 
+      default:
+        if (!key.startsWith("weapon_cursor_hand")) break
+        gfx.fillStyle(0xf4c542)
+        gfx.fillRect(0, 110, 200, 22)
+        gfx.fillTriangle(200, 90, 200, 152, 264, 121)
+        gfx.generateTexture(key, 215, 350)
+        break
       case "catch_box":
         gfx.lineStyle(4, 0xf4c542)
         gfx.strokeRect(0, 0, 768, 480)

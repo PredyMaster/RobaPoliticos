@@ -22,7 +22,7 @@ export class HapticsSystem {
   setEnabled(value: boolean): void { this.enabled = value }
 
   private onSwipeHit(e: SwipeHitEvent): void {
-    if (!this.enabled) return
+    if (!this.enabled || !e.didHit) return
     void Haptics.impact({ style: e.isCritical ? ImpactStyle.Medium : ImpactStyle.Light })
   }
 

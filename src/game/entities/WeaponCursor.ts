@@ -1,8 +1,8 @@
 import * as Phaser from "phaser"
 import { SHOW_COLLIDERS } from "../scenes/GameScene"
 
-const WEAPON_W = 264
-const WEAPON_H = 242
+const WEAPON_W = 215
+const WEAPON_H = 350
 
 const VELOCITY_THRESHOLD = 50 // px/frame mínimos para actualizar ángulo
 const VELOCITY_SMOOTH = 0.07 // factor EMA sobre la velocidad raw (0=congelar, 1=sin suavizar)
@@ -21,8 +21,8 @@ export class WeaponCursor extends Phaser.GameObjects.Image {
   private smoothVel: { x: number; y: number } = { x: 0, y: 0 }
   private targetRotation: number = 0
 
-  constructor(scene: Phaser.Scene) {
-    super(scene, 0, 0, "weapon_cursor")
+  constructor(scene: Phaser.Scene, textureKey = "weapon_cursor") {
+    super(scene, 0, 0, textureKey)
     scene.add.existing(this)
     // Origen centrado para que rotación y collider queden estables sobre el puntero
     this.setOrigin(0.5, 0.5)
@@ -54,6 +54,11 @@ export class WeaponCursor extends Phaser.GameObjects.Image {
     scene.input.on("pointerdown", this.onDown, this)
     scene.input.on("pointerup", this.onUp, this)
     scene.events.on("update", this.onUpdate, this)
+  }
+
+  setTextureKey(textureKey: string): void {
+    this.setTexture(textureKey)
+    this.syncHitZone()
   }
 
   private updateFlip(x: number): void {

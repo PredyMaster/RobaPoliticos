@@ -25,7 +25,9 @@ export class ComboSystem {
   getState(): Readonly<ComboState> { return this.state }
   isFeverActive(): boolean         { return this.feverActive }
 
-  private onSwipeHit(_e: SwipeHitEvent): void {
+  private onSwipeHit(e: SwipeHitEvent): void {
+    if (!e.didHit) return
+
     const now   = this.scene.time.now
     const count = this.state.count + 1
     this.state  = { count, multiplier: comboMultiplier(count), lastHitTime: now, active: count >= 2 }

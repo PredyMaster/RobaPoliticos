@@ -102,8 +102,8 @@ export class AudioSystem {
     return 2 + Math.floor(Math.random() * 3)
   }
 
-  private onSwipeHit(): void {
-    if (!this.sfxEnabled) return
+  private onSwipeHit(e: { didHit: boolean }): void {
+    if (!this.sfxEnabled || !e.didHit) return
     const sfx = this.sfxSlaps[Math.floor(Math.random() * this.sfxSlaps.length)]
     sfx?.play()
 

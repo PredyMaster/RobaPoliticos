@@ -18,7 +18,9 @@ export const WEAPONS: Weapon[] = SHOP_WEAPONS.map((weapon) => ({
   description: weapon.description,
   price: weapon.price,
   unlockLevel: weapon.unlockLevel,
-  coinsPerHit: Math.max(3, Math.round(weapon.attack / 4)),
+  attack: weapon.attack,
+  precision: weapon.precision,
+  coinsPerHit: weapon.attack,
   force: 220 + weapon.attack * 9,
   cooldown: Number(
     clamp(0.62 - weapon.precision / 250 + weapon.attack / 420, 0.34, 0.72).toFixed(2),

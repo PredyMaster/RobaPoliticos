@@ -2,7 +2,7 @@ import * as Phaser from 'phaser'
 import type { ObjectPool } from './ObjectPool'
 import type { Coin } from '../entities/Coin'
 import type { PlayerCharacter } from '../entities/PlayerCharacter'
-import type { Weapon } from '../types/game'
+import type { CombatLoadout } from '../types/game'
 import { COIN_DEFINITIONS, COIN_MAP } from '../data/coins'
 import { pickCoinType, spreadAngle } from '../utils/random'
 import type { SwipeHitEvent } from './SwipeSystem'
@@ -13,25 +13,25 @@ export class CoinSpawnSystem {
   private readonly scene: Phaser.Scene
   private readonly pool: ObjectPool<Coin>
   private readonly player: PlayerCharacter
-  private weapon: Weapon
+  private loadout: CombatLoadout
   private combo: ComboInfo = { count: 0, multiplier: 1 }
 
   constructor(
     scene: Phaser.Scene,
     pool: ObjectPool<Coin>,
     player: PlayerCharacter,
-    weapon: Weapon,
+    loadout: CombatLoadout,
   ) {
     this.scene  = scene
     this.pool   = pool
     this.player = player
-    this.weapon = weapon
+    this.loadout = loadout
     scene.events.on('swipe:hit',     this.onSwipeHit,    this)
     scene.events.on('combo:changed', this.onComboChanged, this)
   }
 
-  setWeapon(weapon: Weapon): void {
-    this.weapon = weapon
+  setLoadout(loadout: CombatLoadout): void {
+    this.loadout = loadout
   }
 
   private onComboChanged(combo: ComboInfo): void {
@@ -39,10 +39,14 @@ export class CoinSpawnSystem {
   }
 
   private onSwipeHit(e: SwipeHitEvent): void {
-    const w = this.weapon
-    let count = w.coinsPerHit
-    if (e.isCritical)           count = Math.ceil(count * w.criticalMultiplier * 0.5)
-    if (this.combo.count >= 20) count = Math.ceil(count * 1.5)  // fever bonus
+    if (!e.didHit) return
+
+    const w = this.loadout
+    let count = w.attack
+    if (e.isCritical) {
+      count += Math.max(2, Math.round(w.attack * (w.criticalMultiplier - 1)))
+    }
+    if (this.combo.count >= 20) count = Math.ceil(count * 1.15) // fever bonus
 
     // Blend hit direction with downward based on strength:
     // weak hit (strength≈0) → coins fall below; strong hit (strength≈1) → fly in hit direction

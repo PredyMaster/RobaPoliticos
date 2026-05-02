@@ -157,6 +157,7 @@ function sanitizeData(raw: Partial<LocalGameData> | null | undefined): LocalGame
         .map((run) => ({
           ...run,
           equippedWeaponId: resolveWeaponId(run.equippedWeaponId),
+          equippedHandId: resolveHandId(run.equippedHandId ?? fallback.equipment.equippedHandId),
           equippedBoxId: resolveBoxId(run.equippedBoxId),
         }))
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())

@@ -9,8 +9,9 @@ export class EconomySystem {
   private readonly scene: Phaser.Scene
   private readonly score: ScoreSystem
   private readonly collision: CollisionSystem
-  private readonly weaponId: string
-  private readonly boxId: string
+  private weaponId: string
+  private handId: string
+  private boxId: string
   private startTime    = 0
   private hits         = 0
   private criticalHits = 0
@@ -21,15 +22,23 @@ export class EconomySystem {
     score: ScoreSystem,
     collision: CollisionSystem,
     weaponId: string,
+    handId: string,
     boxId: string,
   ) {
     this.scene     = scene
     this.score     = score
     this.collision = collision
     this.weaponId  = weaponId
+    this.handId    = handId
     this.boxId     = boxId
     scene.events.on('swipe:hit',    this.onSwipeHit,    this)
     scene.events.on('combo:changed', this.onComboChanged, this)
+  }
+
+  setEquipment(weaponId: string, handId: string, boxId: string): void {
+    this.weaponId = weaponId
+    this.handId = handId
+    this.boxId = boxId
   }
 
   startTracking(): void {
@@ -52,6 +61,7 @@ export class EconomySystem {
       maxCombo:         this.maxCombo,
       durationSeconds:  Math.round((Date.now() - this.startTime) / 1000),
       equippedWeaponId: this.weaponId,
+      equippedHandId:   this.handId,
       equippedBoxId:    this.boxId,
     }
   }
@@ -61,6 +71,7 @@ export class EconomySystem {
   }
 
   private onSwipeHit(e: SwipeHitEvent): void {
+    if (!e.didHit) return
     this.hits++
     if (e.isCritical) this.criticalHits++
   }

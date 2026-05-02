@@ -356,6 +356,7 @@ export function GameScreen() {
 
   const equipment = useInventoryStore((s) => s.equipment)
   const profile = usePlayerStore((s) => s.profile)
+  const addCoins = usePlayerStore((s) => s.addCoins)
   const isShopVisible = isShopOpen || shopOverlayOpen
 
   useEffect(() => {
@@ -389,6 +390,7 @@ export function GameScreen() {
 
     gameRef.current = createGame(containerRef.current, {
       equippedWeaponId: equipment?.equippedWeaponId ?? "tree_branch",
+      equippedHandId: equipment?.equippedHandId ?? "bare_hand",
       equippedBoxId: equipment?.equippedBoxId ?? "basic_box",
       musicEnabled,
       sfxEnabled,
@@ -405,6 +407,23 @@ export function GameScreen() {
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
   // ↑ Intencional: creamos el juego una vez; los cambios de preferencia
   //   se comunican a Phaser vía EventBus desde los stores.
+
+  useEffect(() => {
+    if (!gameRef.current || !equipment) return
+
+    const weaponId = equipment.equippedWeaponId ?? "tree_branch"
+    const handId = equipment.equippedHandId ?? "bare_hand"
+    const boxId = equipment.equippedBoxId ?? "basic_box"
+
+    gameRef.current.registry.set("equippedWeaponId", weaponId)
+    gameRef.current.registry.set("equippedHandId", handId)
+    gameRef.current.registry.set("equippedBoxId", boxId)
+    EventBus.emit("EQUIPMENT_UPDATED", { weaponId, handId, boxId })
+  }, [
+    equipment?.equippedWeaponId,
+    equipment?.equippedHandId,
+    equipment?.equippedBoxId,
+  ])
 
   // Salir: notifica a Phaser (si está activo) y navega
   const handleExit = useCallback(() => {
@@ -424,6 +443,10 @@ export function GameScreen() {
   useEffect(() => {
     const onScoreUpdated = (data: { runScore: number; totalCoins: number }) => {
       updateRunScore(data.runScore, data.totalCoins)
+    }
+
+    const onCoinsCollected = (data: { amount: number }) => {
+      addCoins(data.amount)
     }
 
     const onComboUpdated = (combo: ComboState) => {
@@ -463,6 +486,7 @@ export function GameScreen() {
     }
 
     EventBus.on("RUN_SCORE_UPDATED", onScoreUpdated)
+    EventBus.on("COINS_COLLECTED", onCoinsCollected)
     EventBus.on("COMBO_UPDATED", onComboUpdated)
     EventBus.on("RUN_ENDED", onRunEnded)
     EventBus.on("OPEN_PAUSE_MENU", onOpenPauseMenu)
@@ -473,6 +497,7 @@ export function GameScreen() {
 
     return () => {
       EventBus.off("RUN_SCORE_UPDATED", onScoreUpdated)
+      EventBus.off("COINS_COLLECTED", onCoinsCollected)
       EventBus.off("COMBO_UPDATED", onComboUpdated)
       EventBus.off("RUN_ENDED", onRunEnded)
       EventBus.off("OPEN_PAUSE_MENU", onOpenPauseMenu)
@@ -481,7 +506,7 @@ export function GameScreen() {
       EventBus.off("BG_CHANGED", onBgChanged)
       window.removeEventListener("rp:open-shop", onBrowserOpenShop)
     }
-  }, [updateRunScore, updateCombo, closeShop, endRun, showPauseMenu, navigate])
+  }, [addCoins, updateRunScore, updateCombo, closeShop, endRun, showPauseMenu, navigate])
 
   return (
     <div

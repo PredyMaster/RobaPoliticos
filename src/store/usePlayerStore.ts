@@ -1,10 +1,18 @@
-import { create } from 'zustand'
-import type { Profile, AuthSession, PlayerPreferences } from '../game/types/player'
-import type { Wallet } from '../game/types/economy'
-import { getProfile } from '../services/local/profile'
-import { getWallet } from '../services/local/wallet'
-import { DEFAULT_PREFERENCES } from '../game/types/player'
-import { LOCAL_SESSION, resetLocalData } from '../services/local/storage'
+import { create } from "zustand"
+import type {
+  Profile,
+  AuthSession,
+  PlayerPreferences,
+} from "../game/types/player"
+import type { Wallet } from "../game/types/economy"
+import { getProfile } from "../services/local/profile"
+import { getWallet } from "../services/local/wallet"
+import { DEFAULT_PREFERENCES } from "../game/types/player"
+import {
+  LOCAL_SESSION,
+  resetLocalData,
+  updateLocalData,
+} from "../services/local/storage"
 
 type PlayerState = {
   // Jugador local
@@ -33,6 +41,9 @@ type PlayerActions = {
   // Actualiza el perfil en el store sin ir a BD
   setProfile: (profile: Profile) => void
 
+  // Suma monedas al saldo persistido y sincroniza la wallet del store
+  addCoins: (amount: number) => void
+
   // Actualiza preferencias y las persiste en localStorage
   setPreferences: (partial: Partial<PlayerPreferences>) => void
 
@@ -40,13 +51,16 @@ type PlayerActions = {
   resetProgress: () => Promise<void>
 }
 
-const PREFS_KEY = 'rp_preferences'
+const PREFS_KEY = "rp_preferences"
 
 function loadPrefsFromStorage(): PlayerPreferences {
   try {
     const raw = localStorage.getItem(PREFS_KEY)
     if (!raw) return { ...DEFAULT_PREFERENCES }
-    return { ...DEFAULT_PREFERENCES, ...(JSON.parse(raw) as Partial<PlayerPreferences>) }
+    return {
+      ...DEFAULT_PREFERENCES,
+      ...(JSON.parse(raw) as Partial<PlayerPreferences>),
+    }
   } catch {
     return { ...DEFAULT_PREFERENCES }
   }
@@ -60,66 +74,84 @@ function savePrefsToStorage(prefs: PlayerPreferences): void {
   }
 }
 
-export const usePlayerStore = create<PlayerState & PlayerActions>((set, get) => ({
-  session: null,
-  isLoadingSession: true,
-  profile: null,
-  wallet: null,
-  preferences: loadPrefsFromStorage(),
-  isLoadingPlayer: false,
-  loadError: null,
+export const usePlayerStore = create<PlayerState & PlayerActions>(
+  (set, get) => ({
+    session: null,
+    isLoadingSession: true,
+    profile: null,
+    wallet: null,
+    preferences: loadPrefsFromStorage(),
+    isLoadingPlayer: false,
+    loadError: null,
 
-  loadPlayer: async () => {
-    set({ isLoadingPlayer: true, loadError: null })
+    loadPlayer: async () => {
+      set({ isLoadingPlayer: true, loadError: null })
 
-    const authSession: AuthSession = { ...LOCAL_SESSION }
-    set({ session: authSession, isLoadingSession: false })
+      const authSession: AuthSession = { ...LOCAL_SESSION }
+      set({ session: authSession, isLoadingSession: false })
 
-    const [profileResult, walletResult] = await Promise.all([
-      getProfile(authSession.userId),
-      getWallet(authSession.userId),
-    ])
+      const [profileResult, walletResult] = await Promise.all([
+        getProfile(authSession.userId),
+        getWallet(authSession.userId),
+      ])
 
-    if (profileResult.error || walletResult.error) {
+      if (profileResult.error || walletResult.error) {
+        set({
+          loadError: profileResult.error ?? walletResult.error,
+          isLoadingPlayer: false,
+        })
+        return
+      }
+
       set({
-        loadError: profileResult.error ?? walletResult.error,
+        profile: profileResult.data,
+        wallet: walletResult.data,
         isLoadingPlayer: false,
       })
-      return
-    }
+    },
 
-    set({
-      profile: profileResult.data,
-      wallet: walletResult.data,
-      isLoadingPlayer: false,
-    })
-  },
+    refreshWallet: async () => {
+      const { session } = get()
+      if (!session) return
 
-  refreshWallet: async () => {
-    const { session } = get()
-    if (!session) return
+      const { data, error } = await getWallet(session.userId)
+      if (!error && data) set({ wallet: data })
+    },
 
-    const { data, error } = await getWallet(session.userId)
-    if (!error && data) set({ wallet: data })
-  },
+    setProfile: (profile) => set({ profile }),
 
-  setProfile: (profile) => set({ profile }),
+    addCoins: (amount) => {
+      if (!Number.isFinite(amount) || amount <= 0) return
 
-  setPreferences: (partial) => {
-    const next = { ...get().preferences, ...partial }
-    savePrefsToStorage(next)
-    set({ preferences: next })
-  },
+      const updatedAt = new Date().toISOString()
+      const next = updateLocalData((current) => ({
+        ...current,
+        wallet: {
+          ...current.wallet,
+          currentCoins: current.wallet.currentCoins + amount,
+          updatedAt,
+        },
+      }))
 
-  resetProgress: async () => {
-    const reset = resetLocalData()
-    set({
-      session: { ...LOCAL_SESSION },
-      profile: reset.profile,
-      wallet: reset.wallet,
-      loadError: null,
-      isLoadingSession: false,
-      isLoadingPlayer: false,
-    })
-  },
-}))
+      set({ wallet: next.wallet })
+    },
+
+    setPreferences: (partial) => {
+      const next = { ...get().preferences, ...partial }
+      savePrefsToStorage(next)
+      set({ preferences: next })
+    },
+
+    resetProgress: async () => {
+      const reset = resetLocalData()
+      set({
+        session: { ...LOCAL_SESSION },
+        profile: reset.profile,
+        wallet: reset.wallet,
+        loadError: null,
+        isLoadingSession: false,
+        isLoadingPlayer: false,
+      })
+    },
+  }),
+)

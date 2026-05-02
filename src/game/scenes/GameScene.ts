@@ -14,9 +14,11 @@ import { AudioSystem } from "../systems/AudioSystem"
 import { ParticleSystem } from "../systems/ParticleSystem"
 import { EconomySystem } from "../systems/EconomySystem"
 import { HapticsSystem } from "../systems/HapticsSystem"
-import { getWeapon } from "../data/weapons"
+import { getCombatLoadout } from "../data/combatLoadouts"
 import { getBox } from "../data/boxes"
 import type { GraphicsQuality } from "../types/game"
+import type { CombatLoadout } from "../types/game"
+import { randomBool } from "../utils/random"
 
 export const SCENE_W = 1920
 export const SCENE_H = 1080
@@ -24,7 +26,7 @@ export const GROUND_Y = SCENE_H - 40
 
 export const SHOW_COLLIDERS = false
 
-const POOL_SIZE = 32
+const POOL_SIZE = 256
 
 const WEAPON_HIT_COOLDOWN_MS = 220
 
@@ -67,6 +69,7 @@ export class GameScene extends Phaser.Scene {
   private particles!: ParticleSystem
   private economy!: EconomySystem
   private haptics!: HapticsSystem
+  private combatLoadout!: CombatLoadout
 
   constructor() {
     super({ key: "GameScene" })
@@ -80,6 +83,8 @@ export class GameScene extends Phaser.Scene {
 
     const weaponId =
       (this.registry.get("equippedWeaponId") as string) || "tree_branch"
+    const handId =
+      (this.registry.get("equippedHandId") as string) || "bare_hand"
     const boxId = (this.registry.get("equippedBoxId") as string) || "basic_box"
     const music = (this.registry.get("musicEnabled") as boolean) ?? true
     const sfx = (this.registry.get("sfxEnabled") as boolean) ?? true
@@ -87,8 +92,9 @@ export class GameScene extends Phaser.Scene {
     const quality =
       (this.registry.get("quality") as GraphicsQuality) || "medium"
 
-    this.buildEntities(weaponId, boxId)
-    this.buildSystems(weaponId, boxId, music, sfx, vibration, quality)
+    this.combatLoadout = getCombatLoadout(weaponId, handId)
+    this.buildEntities(this.combatLoadout, boxId)
+    this.buildSystems(this.combatLoadout, boxId, music, sfx, vibration, quality)
     this.registerEventBusListeners()
     this.input.on("pointerdown", this.onPointerDown, this)
     this.audio.playMusic()
@@ -128,31 +134,28 @@ export class GameScene extends Phaser.Scene {
 
   // ── Entities ──────────────────────────────────────────────
 
-  private buildEntities(weaponId: string, boxId: string): void {
-    void weaponId
+  private buildEntities(loadout: CombatLoadout, boxId: string): void {
     const boxCfg = getBox(boxId)
 
     this.player = new PlayerCharacter(this)
     this.box = new CatchBox(this, boxCfg)
-    this.cursor = new WeaponCursor(this)
+    this.cursor = new WeaponCursor(this, loadout.cursorTextureKey)
     this.pool = new ObjectPool<Coin>(() => new Coin(this), POOL_SIZE)
   }
 
   // ── Systems ───────────────────────────────────────────────
 
   private buildSystems(
-    weaponId: string,
+    loadout: CombatLoadout,
     boxId: string,
     music: boolean,
     sfx: boolean,
     vibration: boolean,
     quality: GraphicsQuality,
   ): void {
-    const weapon = getWeapon(weaponId)
-
-    this.swipe = new SwipeSystem(this, this.player, weapon)
+    this.swipe = new SwipeSystem(this, this.player, loadout)
     this.combo = new ComboSystem(this)
-    this.spawn = new CoinSpawnSystem(this, this.pool, this.player, weapon)
+    this.spawn = new CoinSpawnSystem(this, this.pool, this.player, loadout)
     this.score = new ScoreSystem(this)
     this.collision = new CollisionSystem(this, this.pool, this.box)
     this.audio = new AudioSystem(this, music, sfx)
@@ -161,7 +164,8 @@ export class GameScene extends Phaser.Scene {
       this,
       this.score,
       this.collision,
-      weaponId,
+      loadout.weapon.id,
+      loadout.hand.id,
       boxId,
     )
     this.haptics = new HapticsSystem(this, vibration)
@@ -177,6 +181,7 @@ export class GameScene extends Phaser.Scene {
     EventBus.on("TOGGLE_MUSIC", this.onToggleMusic, this)
     EventBus.on("TOGGLE_SFX", this.onToggleSfx, this)
     EventBus.on("CHANGE_BG", this.onChangeBg, this)
+    EventBus.on("EQUIPMENT_UPDATED", this.onEquipmentUpdated, this)
   }
 
   private onToggleMusic(enabled: boolean): void {
@@ -219,6 +224,30 @@ export class GameScene extends Phaser.Scene {
     this.isRunning = false
     this.physics.pause()
     // game.destroy() desde GameScreen.useEffect cleanup dispara shutdown()
+  }
+
+  private onEquipmentUpdated({
+    weaponId,
+    handId,
+    boxId,
+  }: {
+    weaponId: string
+    handId: string
+    boxId: string
+  }): void {
+    this.combatLoadout = getCombatLoadout(weaponId, handId)
+    this.registry.set("equippedWeaponId", this.combatLoadout.weapon.id)
+    this.registry.set("equippedHandId", this.combatLoadout.hand.id)
+    this.registry.set("equippedBoxId", boxId)
+    this.cursor.setTextureKey(this.combatLoadout.cursorTextureKey)
+    this.box.setConfig(getBox(boxId))
+    this.swipe.setLoadout(this.combatLoadout)
+    this.spawn.setLoadout(this.combatLoadout)
+    this.economy.setEquipment(
+      this.combatLoadout.weapon.id,
+      this.combatLoadout.hand.id,
+      boxId,
+    )
   }
 
   // ── Gameplay loop ─────────────────────────────────────────
@@ -285,11 +314,15 @@ export class GameScene extends Phaser.Scene {
 
     // pointer.velocity ≈ px/frame a 60 fps; un swipe rápido da ~50 px/frame
     const strength = Math.max(0.2, Math.min(speed / 50, 1.0))
+    const didHit = randomBool(this.combatLoadout.successChance)
+    const isCritical =
+      didHit && randomBool(this.combatLoadout.criticalChance)
 
     this.events.emit("swipe:hit", {
       direction: { x: dx, y: dy },
       strength,
-      isCritical: false,
+      didHit,
+      isCritical,
       startX: this.cursor.x,
       startY: this.cursor.y,
     })
@@ -307,6 +340,7 @@ export class GameScene extends Phaser.Scene {
     EventBus.off("TOGGLE_MUSIC", this.onToggleMusic, this)
     EventBus.off("TOGGLE_SFX", this.onToggleSfx, this)
     EventBus.off("CHANGE_BG", this.onChangeBg, this)
+    EventBus.off("EQUIPMENT_UPDATED", this.onEquipmentUpdated, this)
     this.input.off("pointerdown", this.onPointerDown, this)
 
     this.swipe?.destroy()

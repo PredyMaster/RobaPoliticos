@@ -49,6 +49,7 @@ export type SubmitRunResult =
 export type SubmitRunError =
   | 'invalid_values'
   | 'weapon_not_owned'
+  | 'hand_not_owned'
   | 'box_not_owned'
   | 'suspicious_run'
 

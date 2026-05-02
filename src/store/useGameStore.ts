@@ -97,10 +97,6 @@ export const useGameStore = create<GameState & GameActions>((set) => ({
 
     const submitResult = await submitRun(result)
     set({ lastSubmitResult: submitResult, isSubmitting: false })
-
-    if (submitResult.ok) {
-      await usePlayerStore.getState().refreshWallet()
-    }
   },
 
   setMusicEnabled: (value) => {

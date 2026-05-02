@@ -6,6 +6,8 @@ export type Weapon = {
   description: string
   price: number
   unlockLevel: number
+  attack: number
+  precision: number
   coinsPerHit: number
   force: number
   cooldown: number          // segundos entre golpes
@@ -40,6 +42,23 @@ export type HandItem = {
   unlockLevel: number
   attack: number
   precision: number
+}
+
+export type CombatLoadout = {
+  weapon: Weapon
+  hand: HandItem
+  attack: number
+  precision: number
+  successChance: number
+  force: number
+  cooldown: number
+  criticalChance: number
+  criticalMultiplier: number
+  spread: number
+  rarityBonus: number
+  soundEffect: string
+  cursorTextureKey: string
+  cursorTexturePath: string
 }
 
 // ── Monedas ─────────────────────────────────────────────────
@@ -93,6 +112,7 @@ export type RunResult = {
   maxCombo: number
   durationSeconds: number
   equippedWeaponId: string
+  equippedHandId: string
   equippedBoxId: string
 }
 
@@ -138,6 +158,7 @@ export type GameEventMap = {
   RUN_PAUSED: undefined
   RUN_RESUMED: undefined
   RUN_ENDED: RunResult
+  EQUIPMENT_UPDATED: { weaponId: string; handId: string; boxId: string }
   OPEN_PAUSE_MENU: undefined
   OPEN_SHOP: undefined
   EXIT_TO_HOME: undefined
