@@ -25,6 +25,7 @@ export type BoxItem = {
   price: number
   unlockLevel: number
   width: number
+  collider: number
   height: number
   speed: number
   acceleration: number

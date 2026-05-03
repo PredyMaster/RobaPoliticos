@@ -16,6 +16,7 @@ export class Coin extends Phaser.Physics.Arcade.Sprite {
 
   // rad/s: coins snap quickly to trajectory, bills flutter slowly
   private rotationSpeed = 0
+  private magnetized = false
 
   private debugGfx?: Phaser.GameObjects.Graphics
 
@@ -61,6 +62,7 @@ export class Coin extends Phaser.Physics.Arcade.Sprite {
 
     const isBill = type.startsWith('bill_')
     this.rotationSpeed = isBill ? 3 : 8
+    this.magnetized = false
     this.setRotation((Math.random() * 2 - 1) * 0.3) // small random initial tilt
 
     this.coinState = {
@@ -70,6 +72,35 @@ export class Coin extends Phaser.Physics.Arcade.Sprite {
       spawnTime: Date.now(),
       maxLifeTime: COIN_LIFETIME_MS,
     }
+  }
+
+  isMagnetized(): boolean {
+    return this.magnetized
+  }
+
+  startMagnetPull(targetX: number, targetY: number, baseSpeed: number): void {
+    if (!this.active) return
+    this.magnetized = true
+    const body = this.body as Phaser.Physics.Arcade.Body
+    body.setAllowGravity(false)
+    this.pullToward(targetX, targetY, baseSpeed)
+  }
+
+  releaseMagnetPull(): void {
+    if (!this.magnetized) return
+    this.magnetized = false
+    const body = this.body as Phaser.Physics.Arcade.Body
+    body.setAllowGravity(true)
+  }
+
+  pullToward(targetX: number, targetY: number, baseSpeed: number): void {
+    if (!this.active) return
+    const body = this.body as Phaser.Physics.Arcade.Body
+    const dx = targetX - this.x
+    const dy = targetY - this.y
+    const dist = Math.sqrt(dx * dx + dy * dy) || 1
+    const speed = baseSpeed + Math.min(420, dist * 1.8)
+    body.setVelocity((dx / dist) * speed, (dy / dist) * speed)
   }
 
   preUpdate(time: number, delta: number): void {
@@ -92,9 +123,11 @@ export class Coin extends Phaser.Physics.Arcade.Sprite {
     this.setActive(false).setVisible(false)
     this.setRotation(0)
     this.setScale(1) // reset para reutilización del pool
+    this.magnetized = false
     const body = this.body as Phaser.Physics.Arcade.Body
     body.setVelocity(0, 0)
     body.setGravityY(0) // reset para reutilización del pool
+    body.setAllowGravity(true)
     body.setEnable(false)
     if (this.coinState) this.coinState.active = false
     this.debugGfx?.clear()

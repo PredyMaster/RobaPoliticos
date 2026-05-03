@@ -4,7 +4,9 @@ import { SCENE_W, GROUND_Y, showColliders } from "../scenes/GameScene"
 import type { Coin } from "./Coin"
 
 const SAFE_MARGIN = 30
-const VISUAL_SCALE = 1.9
+const MAGNET_BASE_SPEED = 520
+const CATCH_AREA_HEIGHT = 32
+const CATCH_AREA_OFFSET_Y = 90
 
 export class CatchBox extends Phaser.GameObjects.Image {
   readonly catchArea: Phaser.Geom.Rectangle
@@ -17,19 +19,16 @@ export class CatchBox extends Phaser.GameObjects.Image {
   constructor(scene: Phaser.Scene, config: BoxItem) {
     const x = SCENE_W / 2
     const y = GROUND_Y - config.height / 2 - 75
-    super(scene, x, y, "catch_box")
+    super(scene, x, y, config.visualAsset || "catch_box")
     this.cfg = config
     scene.add.existing(this)
-    this.setDisplaySize(
-      config.width * VISUAL_SCALE,
-      config.height * VISUAL_SCALE,
-    )
+    this.syncVisualSize()
 
     this.catchArea = new Phaser.Geom.Rectangle(
-      x - config.width,
-      y - config.height,
-      config.width,
-      config.height,
+      x - config.collider / 2,
+      y - CATCH_AREA_HEIGHT,
+      config.collider,
+      CATCH_AREA_HEIGHT,
     )
 
     if (showColliders) {
@@ -41,10 +40,8 @@ export class CatchBox extends Phaser.GameObjects.Image {
 
   setConfig(config: BoxItem): void {
     this.cfg = config
-    this.setDisplaySize(
-      config.width * VISUAL_SCALE,
-      config.height * VISUAL_SCALE,
-    )
+    this.setTexture(config.visualAsset || "catch_box")
+    this.syncVisualSize()
     this.syncCatchArea()
   }
 
@@ -79,20 +76,21 @@ export class CatchBox extends Phaser.GameObjects.Image {
   }
 
   applyMagnet(coins: readonly Coin[]): void {
-    if (this.cfg.magnetPower <= 0) return
-    const radiusSq = this.cfg.magnetPower * this.cfg.magnetPower
+    if (this.cfg.magnetPower <= 0) {
+      for (const coin of coins) {
+        coin.releaseMagnetPull()
+      }
+      return
+    }
+
+    const targetX = this.catchArea.centerX
+    const targetY = this.catchArea.centerY
+    const pullSpeed = MAGNET_BASE_SPEED + this.cfg.speed * 0.45
+
     for (const coin of coins) {
       if (!coin.active) continue
-      const dx = this.x - coin.x
-      const dy = this.y - coin.y
-      if (dx * dx + dy * dy > radiusSq) continue
-      const dist = Math.sqrt(dx * dx + dy * dy) || 1
-      const body = coin.body as Phaser.Physics.Arcade.Body
-      const pull = 120
-      body.setVelocity(
-        body.velocity.x + (dx / dist) * pull,
-        body.velocity.y + (dy / dist) * pull,
-      )
+      if (!coin.isMagnetized() && !this.isInsideMagnetZone(coin)) continue
+      coin.startMagnetPull(targetX, targetY, pullSpeed)
     }
   }
 
@@ -108,12 +106,32 @@ export class CatchBox extends Phaser.GameObjects.Image {
 
   private syncCatchArea(): void {
     this.catchArea.setTo(
-      this.x - this.cfg.width / 2,
-      this.y - this.cfg.height / 2,
-      this.cfg.width,
-      this.cfg.height,
+      this.x - this.cfg.collider / 2,
+      this.y - CATCH_AREA_HEIGHT / 2 - CATCH_AREA_OFFSET_Y,
+      this.cfg.collider,
+      CATCH_AREA_HEIGHT,
     )
+
     this.redrawDebug()
+  }
+
+  private syncVisualSize(): void {
+    const width = Math.max(this.cfg.width * 1.65, this.cfg.width + 220)
+    const frameWidth = this.frame.width || 1
+    const frameHeight = this.frame.height || 1
+    const scale = width / frameWidth
+
+    this.setDisplaySize(width, frameHeight * scale)
+  }
+
+  private isInsideMagnetZone(coin: Coin): boolean {
+    const padding = this.cfg.magnetPower
+    return (
+      coin.x >= this.catchArea.left - padding &&
+      coin.x <= this.catchArea.right + padding &&
+      coin.y >= this.catchArea.top - padding &&
+      coin.y <= this.catchArea.bottom + padding
+    )
   }
 
   private redrawDebug(): void {

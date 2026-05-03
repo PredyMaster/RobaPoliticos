@@ -9,7 +9,7 @@ const H = 1080
 // Pon estos archivos en public/assets/ para reemplazar los placeholders:
 //   player.png        464×515   (político de cuerpo entero, pies abajo, PNG transparente)
 //   hands_weapons/...           (mano+arma apuntando →, mango en el lado IZQUIERDO)
-//   catch_box.png     768×480   (caja/maletín, PNG transparente)
+//   catchBoxes/...              (cajas/maletines, PNG transparente)
 //   coin.png          ―         (moneda que sale al golpear al player)
 //   bg.jpg            1920×1080 (fondo de escena, opcional)
 const REAL_SPRITES: Record<string, string> = {
@@ -18,6 +18,12 @@ const REAL_SPRITES: Record<string, string> = {
   player_hard_slap: "assets/player_hard_slap.png",
   weapon_cursor: "assets/weapon_cursor.png",
   catch_box: "assets/catch_box.png",
+  catch_box_basic_box: "assets/catchBoxes/catch_box1.png",
+  catch_box_wide_box: "assets/catchBoxes/catch_box2.png",
+  catch_box_wheel_box: "assets/catchBoxes/catch_box3.png",
+  catch_box_magnet_box: "assets/catchBoxes/catch_box4.png",
+  catch_box_bonus_box: "assets/catchBoxes/catch_box5.png",
+  catch_box_ultimate_box: "assets/catchBoxes/catch_box6.png",
   coin_silver: "assets/coins/coin_silver.png",
   coin_gold: "assets/coins/coin_gold.png",
   bill_blue: "assets/coins/bill_blue.png",
@@ -167,12 +173,18 @@ export class PreloadScene extends Phaser.Scene {
         gfx.fillTriangle(200, 90, 200, 152, 264, 121)
         gfx.generateTexture(key, 215, 350)
         break
+      case "catch_box_basic_box":
+      case "catch_box_wide_box":
+      case "catch_box_wheel_box":
+      case "catch_box_magnet_box":
+      case "catch_box_bonus_box":
+      case "catch_box_ultimate_box":
       case "catch_box":
         gfx.lineStyle(4, 0xf4c542)
-        gfx.strokeRect(0, 0, 768, 480)
+        gfx.strokeRect(0, 0, 768, 422)
         gfx.fillStyle(0xf4c542, 0.12)
-        gfx.fillRect(0, 0, 768, 480)
-        gfx.generateTexture("catch_box", 768, 480)
+        gfx.fillRect(0, 0, 768, 422)
+        gfx.generateTexture(key, 768, 422)
         break
 
       case "coin_silver":

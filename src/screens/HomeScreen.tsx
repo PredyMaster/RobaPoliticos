@@ -1,167 +1,111 @@
-import { useNavigate } from 'react-router-dom'
-import { usePlayerStore } from '../store/usePlayerStore'
-import { useInventoryStore } from '../store/useInventoryStore'
-import { getBox } from '../game/data/boxes'
-import { getHand } from '../game/data/hands'
-import { getWeapon } from '../game/data/weapons'
-import { C, FONT, cardStyle } from './shared/theme'
+import { useNavigate } from "react-router-dom"
+import { FONT } from "./shared/theme"
 
-const NAV = [
-  { label: '🛒 Tienda',   path: '/shop' },
-  { label: '🏆 Ranking',  path: '/ranking' },
-  { label: '🎯 Misiones', path: '/missions' },
-  { label: '👤 Perfil',   path: '/profile' },
-  { label: '⚙ Ajustes',  path: '/settings' },
-]
+type HomeAction = {
+  label: string
+  path: string
+  colors: readonly [string, string]
+  textColor?: string
+}
+
+const ACTIONS: readonly HomeAction[] = [
+  { label: "JUGAR", path: "/game", colors: ["#d32222", "#7e0d0d"] },
+  { label: "RANKING", path: "/ranking", colors: ["#df5e10", "#9d2d05"] },
+  {
+    label: "OPCIONES",
+    path: "/settings",
+    colors: ["#f4bd19", "#dc7b00"],
+    textColor: "#2a1800",
+  },
+] as const
 
 export function HomeScreen() {
-  const navigate  = useNavigate()
-  const profile   = usePlayerStore((s) => s.profile)
-  const wallet    = usePlayerStore((s) => s.wallet)
-  const equipment = useInventoryStore((s) => s.equipment)
-
-  const weapon = equipment ? getWeapon(equipment.equippedWeaponId) : null
-  const hand   = equipment?.equippedHandId ? getHand(equipment.equippedHandId) : null
-  const box    = equipment ? getBox(equipment.equippedBoxId) : null
+  const navigate = useNavigate()
 
   return (
     <div
       style={{
-        minHeight: '100dvh',
-        background: C.bg,
+        minHeight: "100dvh",
+        background: "#1a1a2e",
         fontFamily: FONT,
-        display: 'flex',
-        flexDirection: 'column',
-        color: '#fff',
+        color: "#fff",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "clamp(8px, 2vw, 24px)",
       }}
     >
-      {/* ── Header ── */}
-      <header
-        style={{
-          padding: '14px 20px',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          borderBottom: `1px solid ${C.border}`,
-        }}
-      >
-        <h1 style={{ margin: 0, color: C.gold, fontSize: 18, fontWeight: 800 }}>Roba Políticos</h1>
-        <div style={{ display: 'flex', gap: 14, alignItems: 'center', fontSize: 14 }}>
-          <span>🪙 {(wallet?.currentCoins ?? 0).toLocaleString()}</span>
-          {(wallet?.premiumGems ?? 0) > 0 && <span>💎 {wallet!.premiumGems}</span>}
-        </div>
-      </header>
-
-      {/* ── Player card ── */}
-      <div style={{ ...cardStyle, margin: '16px 16px 0' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <div
-            style={{
-              width: 52,
-              height: 52,
-              borderRadius: '50%',
-              background: `linear-gradient(135deg, ${C.gold}, ${C.goldDk})`,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: 24,
-              flexShrink: 0,
-            }}
-          >
-            👤
-          </div>
-          <div style={{ flex: 1 }}>
-            <p style={{ margin: 0, fontWeight: 700, fontSize: 16 }}>{profile?.username ?? '…'}</p>
-            <p style={{ margin: '3px 0 0', color: C.dim, fontSize: 13 }}>
-              Nivel {profile?.level ?? 1} · {(wallet?.totalScore ?? 0).toLocaleString()} pts
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Play button ── */}
-      <div style={{ padding: '16px' }}>
-        <button
-          onClick={() => navigate('/game')}
-          style={{
-            width: '100%',
-            padding: '18px',
-            background: C.gold,
-            border: 'none',
-            borderRadius: 14,
-            color: '#1a1a2e',
-            fontSize: 22,
-            fontWeight: 800,
-            cursor: 'pointer',
-            fontFamily: FONT,
-            letterSpacing: '0.06em',
-          }}
-        >
-          ▶ JUGAR
-        </button>
-      </div>
-
-      {/* ── Equipped items ── */}
-      <div style={{ padding: '0 16px 16px', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
-        <EquipCard
-          label="Arma equipada"
-          name={weapon?.name ?? '—'}
-          detail={weapon ? `${weapon.attack} ataque · ${weapon.loot} botin` : 'Sin equipar'}
-        />
-        <EquipCard
-          label="Mano equipada"
-          name={hand?.name ?? '—'}
-          detail={hand ? `${hand.attack} ataque · ${hand.loot} botin` : 'Sin equipar'}
-        />
-        <EquipCard
-          label="Caja equipada"
-          name={box?.name ?? '—'}
-          detail={box ? `×${box.multiplier} multiplicador` : 'Sin equipar'}
-        />
-      </div>
-
-      {/* ── Nav grid ── */}
       <div
         style={{
-          padding: '0 16px 28px',
-          display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)',
-          gap: 8,
-          marginTop: 'auto',
+          width: "min(1240px, 100%)",
+          display: "grid",
+          gridTemplateColumns: "minmax(0, 1fr) clamp(96px, 28vw, 320px)",
+          alignItems: "center",
+          gap: "clamp(10px, 3vw, 64px)",
+          padding: "clamp(10px, 4vw, 64px)",
+          borderRadius: "28px",
+          background:
+            "linear-gradient(90deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)",
+          boxShadow: "0 24px 60px rgba(0,0,0,0.35)",
         }}
       >
-        {NAV.map((item) => (
-          <button
-            key={item.path}
-            onClick={() => navigate(item.path)}
+        <div
+          style={{
+            minWidth: 0,
+            display: "flex",
+            justifyContent: "center",
+          }}
+        >
+          <img
+            src="/assets/home/home_image.png"
+            alt="Roba al Politico"
             style={{
-              padding: '14px 6px',
-              background: C.card,
-              border: `1px solid ${C.border}`,
-              borderRadius: 10,
-              color: '#fff',
-              fontSize: 13,
-              cursor: 'pointer',
-              fontFamily: FONT,
-              minHeight: 54,
+              width: "100%",
+              maxWidth: "clamp(150px, 40vw, 410px)",
+              height: "auto",
+              objectFit: "contain",
+              filter: "drop-shadow(0 20px 40px rgba(0,0,0,0.35))",
+              userSelect: "none",
+              pointerEvents: "none",
             }}
-          >
-            {item.label}
-          </button>
-        ))}
-      </div>
-    </div>
-  )
-}
+          />
+        </div>
 
-function EquipCard({ label, name, detail }: { label: string; name: string; detail: string }) {
-  return (
-    <div style={{ ...cardStyle, padding: '12px 14px' }}>
-      <p style={{ margin: 0, color: C.dim, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.07em' }}>
-        {label}
-      </p>
-      <p style={{ margin: '4px 0 0', fontWeight: 700, fontSize: 14 }}>{name}</p>
-      <p style={{ margin: '3px 0 0', color: C.gold, fontSize: 12 }}>{detail}</p>
+        <div
+          style={{
+            width: "100%",
+            display: "flex",
+            flexDirection: "column",
+            gap: "clamp(8px, 2vw, 18px)",
+          }}
+        >
+          {ACTIONS.map((action) => (
+            <button
+              key={action.path}
+              onClick={() => navigate(action.path)}
+              style={{
+                width: "100%",
+                minHeight: "clamp(40px, 8vw, 76px)",
+                border: "none",
+                borderRadius: "clamp(10px, 2vw, 16px)",
+                cursor: "pointer",
+                fontFamily: FONT,
+                fontSize: "clamp(0.9rem, 2.3vw, 2rem)",
+                fontWeight: 900,
+                letterSpacing: "0.02em",
+                color: action.textColor ?? "#fff",
+                background: `linear-gradient(180deg, ${action.colors[0]} 0%, ${action.colors[1]} 100%)`,
+                boxShadow:
+                  "0 12px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.25)",
+                textTransform: "uppercase",
+                padding: "clamp(6px, 1.4vw, 12px)",
+              }}
+            >
+              {action.label}
+            </button>
+          ))}
+        </div>
+      </div>
     </div>
   )
 }

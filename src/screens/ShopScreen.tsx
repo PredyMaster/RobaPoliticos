@@ -44,6 +44,7 @@ const ITEM_MAP = new Map<string, ShopCatalogItem>(
     item,
   ]),
 )
+const DEFAULT_WEAPON_ID = normalizeCatalogId("weapon", SHOP_WEAPONS[0].id)
 
 const TIER_STYLES: Record<
   ShopTier,
@@ -141,25 +142,16 @@ export function ShopView({
   const layout = useShopLayout()
   const [selected, setSelected] = useState<ShopSelection>(() => ({
     category: "weapon",
-    id: normalizeCatalogId(
-      "weapon",
-      equipment?.equippedWeaponId ?? SHOP_WEAPONS[0].id,
-    ),
+    id: normalizeCatalogId("weapon", equipment?.equippedWeaponId ?? DEFAULT_WEAPON_ID),
   }))
-
-  useEffect(() => {
-    if (!equipment?.equippedWeaponId) return
-    setSelected((current) => {
-      if (current.category !== "weapon") return current
-      if (current.id !== SHOP_WEAPONS[0].id) return current
-      return {
-        category: "weapon",
-        id: normalizeCatalogId("weapon", equipment.equippedWeaponId),
-      }
-    })
-  }, [equipment?.equippedWeaponId])
-
-  const selectedItem = getCatalogItem(selected.category, selected.id)
+  const resolvedSelected = resolveSelectedSelection(
+    selected,
+    equipment?.equippedWeaponId,
+  )
+  const selectedItem = getCatalogItem(
+    resolvedSelected.category,
+    resolvedSelected.id,
+  )
   const handleBack = onBack ?? (() => navigate("/home"))
 
   return (
@@ -172,6 +164,7 @@ export function ShopView({
         flexDirection: "column",
         overflow: layout.compact ? "auto" : "hidden",
         color: "#fff",
+        paddingTop: "15px",
         background:
           "radial-gradient(circle at top, rgba(27, 92, 162, 0.3), transparent 36%), linear-gradient(180deg, #061724 0%, #04121d 100%)",
         fontFamily: `${SHOP_FONT}, ${FONT}`,
@@ -210,32 +203,30 @@ export function ShopView({
             }}
           >
             <CategorySection
-              title="ARMAS"
               category="weapon"
               items={SHOP_WEAPONS}
-              selected={selected}
+              selected={resolvedSelected}
               onSelect={setSelected}
               layout={layout}
             />
             <CategorySection
-              title="MANOS"
               category="hand"
               items={SHOP_HANDS}
-              selected={selected}
+              selected={resolvedSelected}
               onSelect={setSelected}
               layout={layout}
             />
             <CategorySection
-              title="CAJAS"
               category="box"
               items={SHOP_BOXES}
-              selected={selected}
+              selected={resolvedSelected}
               onSelect={setSelected}
               layout={layout}
             />
           </div>
 
           <DetailPanel
+            key={`${selectedItem.category}:${selectedItem.id}`}
             item={selectedItem}
             compact={layout.compact}
             short={layout.short}
@@ -267,8 +258,7 @@ function TopBar({ coins, onBack }: { coins: number; onBack: () => void }) {
           display: "flex",
           alignItems: "center",
           gap: 18,
-          minHeight: 108,
-          padding: "18px 26px",
+          padding: "10px 18px",
           borderRadius: 24,
           border: PANEL_BORDER,
           background:
@@ -278,7 +268,14 @@ function TopBar({ coins, onBack }: { coins: number; onBack: () => void }) {
         }}
       >
         <MoneyStackIcon />
-        <div style={{ minWidth: 0 }}>
+        <div
+          style={{
+            minWidth: 0,
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+          }}
+        >
           <div
             style={{
               fontSize: 24,
@@ -292,7 +289,6 @@ function TopBar({ coins, onBack }: { coins: number; onBack: () => void }) {
           </div>
           <div
             style={{
-              marginTop: 8,
               color: "#93e81c",
               fontSize: 30,
               fontWeight: 900,
@@ -315,14 +311,12 @@ function TopBar({ coins, onBack }: { coins: number; onBack: () => void }) {
 }
 
 function CategorySection({
-  title,
   category,
   items,
   selected,
   onSelect,
   layout,
 }: {
-  title: string
   category: ShopItemType
   items: ShopCatalogItem[]
   selected: ShopSelection
@@ -335,35 +329,13 @@ function CategorySection({
     <section
       style={{
         position: "relative",
-        padding: layout.short ? "28px 12px 10px" : "32px 14px 12px",
+        padding: layout.short ? "10px 12px" : "12px 14px",
         borderRadius: 24,
         border: `2px solid ${sectionStyle.border}`,
         background: sectionStyle.shell,
         boxShadow: `inset 0 0 0 2px rgba(0,0,0,0.22), 0 20px 44px ${sectionStyle.shadow}`,
       }}
     >
-      <div
-        style={{
-          position: "absolute",
-          top: -16,
-          left: "50%",
-          transform: "translateX(-50%)",
-          minWidth: layout.short ? 176 : 200,
-          padding: layout.short ? "6px 22px 8px" : "7px 24px 9px",
-          borderRadius: 14,
-          border: `2px solid ${sectionStyle.border}`,
-          background: sectionStyle.banner,
-          textAlign: "center",
-          fontSize: layout.short ? 16 : 18,
-          fontWeight: 900,
-          letterSpacing: "0.03em",
-          textShadow: OUTLINE_SHADOW,
-          boxShadow: "0 10px 18px rgba(0,0,0,0.25)",
-        }}
-      >
-        {title}
-      </div>
-
       <div
         style={{
           display: "grid",
@@ -400,8 +372,12 @@ function ShopTile({
   onSelect: () => void
   layout: ShopLayout
 }) {
+  const [busy, setBusy] = useState(false)
   const tierStyle = TIER_STYLES[item.tier]
   const status = useItemStatus(item.category, item.id, item.unlockLevel)
+  const coins = usePlayerStore((s) => s.wallet?.currentCoins ?? 0)
+  const purchase = useInventoryStore((s) => s.purchase)
+  const equip = useInventoryStore((s) => s.equip)
   const statusLabel =
     status === "equipped"
       ? "EQUIPADO"
@@ -411,15 +387,42 @@ function ShopTile({
           ? "BLOQ."
           : null
 
+  async function handleDoubleClick() {
+    onSelect()
+    if (busy || status === "equipped" || status === "locked") return
+
+    setBusy(true)
+
+    try {
+      if (status === "owned") {
+        await equip(item.category, item.id)
+        return
+      }
+
+      if (coins < item.price) return
+
+      const purchaseResult = await purchase(item.category, item.id)
+      if (!purchaseResult.ok) return
+
+      await equip(item.category, item.id)
+    } finally {
+      setBusy(false)
+    }
+  }
+
   return (
     <button
       type="button"
       onClick={onSelect}
+      onDoubleClick={() => void handleDoubleClick()}
+      disabled={busy}
       style={{
         ...resetButton,
         position: "relative",
         width: "100%",
         minWidth: 0,
+        opacity: busy ? 0.82 : 1,
+        cursor: busy ? "progress" : "pointer",
       }}
     >
       {statusLabel && (
@@ -523,11 +526,6 @@ function DetailPanel({
   const purchase = useInventoryStore((s) => s.purchase)
   const equip = useInventoryStore((s) => s.equip)
   const coins = usePlayerStore((s) => s.wallet?.currentCoins ?? 0)
-
-  useEffect(() => {
-    setFeedback(null)
-    setBusy(false)
-  }, [item.category, item.id])
 
   const canBuy = status === "available" && coins >= item.price
   const stats = buildDetailStats(item)
@@ -864,9 +862,7 @@ function CoinIcon({ size }: { size: number }) {
 
 function MoneyStackIcon() {
   return (
-    <div
-      style={{ position: "relative", width: 108, height: 74, flexShrink: 0 }}
-    >
+    <div style={{ position: "relative", width: 54, height: 37, flexShrink: 0 }}>
       <div style={{ ...moneyBillStyle, left: 6, top: 24, rotate: "-16deg" }} />
       <div style={{ ...moneyBillStyle, left: 28, top: 8, rotate: "10deg" }} />
     </div>
@@ -929,6 +925,20 @@ function useItemStatus(
   if (ownsItem(itemType, itemId)) return "owned"
   if (level < unlockLevel) return "locked"
   return "available"
+}
+
+function resolveSelectedSelection(
+  selected: ShopSelection,
+  equippedWeaponId?: string,
+): ShopSelection {
+  if (selected.category !== "weapon") return selected
+  if (selected.id !== DEFAULT_WEAPON_ID) return selected
+  if (!equippedWeaponId) return selected
+
+  return {
+    category: "weapon",
+    id: normalizeCatalogId("weapon", equippedWeaponId),
+  }
 }
 
 function normalizeCatalogId(category: ShopItemType, id: string): string {
@@ -1043,7 +1053,6 @@ const backButtonStyle: CSSProperties = {
   ...resetButton,
   minWidth: 280,
   minHeight: 78,
-  padding: "16px 26px",
   borderRadius: 22,
   border: "2px solid rgba(255, 197, 84, 0.72)",
   background: "linear-gradient(180deg, #f5b319 0%, #d68805 100%)",
@@ -1065,6 +1074,7 @@ const backArrowStyle: CSSProperties = {
   borderRadius: 18,
   display: "inline-flex",
   alignItems: "center",
+  paddingBottom: "10px",
   justifyContent: "center",
   background: "rgba(255,255,255,0.84)",
   color: "#7f4a00",
@@ -1093,9 +1103,9 @@ const actionButtonStyle: CSSProperties = {
 
 const moneyBillStyle: CSSProperties = {
   position: "absolute",
-  width: 64,
-  height: 40,
-  borderRadius: 10,
+  width: 34,
+  height: 20,
+  borderRadius: 2,
   background: "linear-gradient(180deg, #9cf34b 0%, #56b516 100%)",
   border: "3px solid #173500",
   boxShadow: "0 8px 18px rgba(0,0,0,0.25)",

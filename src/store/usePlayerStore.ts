@@ -16,6 +16,8 @@ import {
   updateLocalData,
 } from "../services/local/storage"
 
+const testCoins = 0
+
 type PlayerState = {
   // Jugador local
   session: AuthSession | null
@@ -126,6 +128,7 @@ export const usePlayerStore = create<PlayerState & PlayerActions>(
       if (!session) return
 
       const { data, error } = await getWallet(session.userId)
+
       if (!error && data) {
         set({ wallet: data })
         emitWalletUpdated(data)
@@ -142,7 +145,7 @@ export const usePlayerStore = create<PlayerState & PlayerActions>(
         ...current,
         wallet: {
           ...current.wallet,
-          currentCoins: current.wallet.currentCoins + amount,
+          currentCoins: current.wallet.currentCoins + amount + testCoins,
           updatedAt,
         },
       }))
