@@ -13,9 +13,10 @@ const H = 1080
 //   coin.png          ―         (moneda que sale al golpear al player)
 //   bg.jpg            1920×1080 (fondo de escena, opcional)
 const REAL_SPRITES: Record<string, string> = {
-  player: "assets/player.png",
-  player_soft_slap: "assets/player_soft_slap.png",
-  player_hard_slap: "assets/player_hard_slap.png",
+  player: "assets/player/player.webp",
+  player_soft_slap: "assets/player/player_soft_slap.webp",
+  player_hard_slap: "assets/player/player_hard_slap.webp",
+  player_down_slap: "assets/player/player_down_slap.webp",
   weapon_cursor: "assets/weapon_cursor.png",
   catch_box: "assets/catch_box.png",
   catch_box_basic_box: "assets/catchBoxes/catch_box1.webp",

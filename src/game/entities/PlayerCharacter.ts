@@ -46,13 +46,18 @@ export class PlayerCharacter extends Phaser.GameObjects.Sprite {
   private onSwipeHit(e: SwipeHitEvent): void {
     if (!e.didHit) return
 
-    const textureKey =
-      e.strength >= HARD_SLAP_THRESHOLD
+    const isDownSlap =
+      e.direction.y > 0 &&
+      Math.abs(e.direction.y) > Math.abs(e.direction.x)
+
+    const textureKey = isDownSlap
+      ? "player_down_slap"
+      : e.strength >= HARD_SLAP_THRESHOLD
         ? "player_hard_slap"
         : "player_soft_slap"
 
     this.setTexture(textureKey)
-    this.setFlipX(e.direction.x < 0)
+    this.setFlipX(!isDownSlap && e.direction.x < 0)
 
     this.slapTimer?.remove()
     this.slapTimer = this.scene.time.delayedCall(SLAP_DURATION_MS, () => {

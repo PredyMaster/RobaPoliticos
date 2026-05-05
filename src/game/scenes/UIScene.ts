@@ -59,11 +59,22 @@ export class UIScene extends Phaser.Scene {
   private x2Label: Phaser.GameObjects.Text | null = null
   private x2Tween: Phaser.Tweens.Tween | null = null
 
+  private uiScale = 1
+  private effShopBtnW = SHOP_BTN_W
+  private effShopBtnH = SHOP_BTN_H
+  private effBtnH = BTN_H
+
   constructor() {
     super({ key: "UIScene", active: false })
   }
 
   create(): void {
+    this.uiScale = this.sys.game.device.os.desktop ? 0.5 : 1
+    const s = this.uiScale
+    this.effShopBtnW = Math.round(SHOP_BTN_W * s)
+    this.effShopBtnH = Math.round(SHOP_BTN_H * s)
+    this.effBtnH = Math.round(BTN_H * s)
+
     // Fondo semitransparente para el contador (esquinas redondeadas via Graphics)
     this.coinBg = this.add.graphics().setDepth(99)
 
@@ -71,7 +82,7 @@ export class UIScene extends Phaser.Scene {
     const textX = COIN_BG_X + COIN_PAD_X + COIN_SLOT_W + COIN_GAP
     this.coinCounter = this.add
       .text(textX, COIN_BG_Y + COIN_PAD_Y, "0", {
-        fontSize: "72px",
+        fontSize: `${Math.round(72 * this.uiScale)}px`,
         color: "#ffffff",
         fontStyle: "bold",
         stroke: "#000000",
@@ -104,7 +115,7 @@ export class UIScene extends Phaser.Scene {
         this.timerBgY + COIN_PAD_Y,
         this.formatTime(gameTime),
         {
-          fontSize: "72px",
+          fontSize: `${Math.round(72 * this.uiScale)}px`,
           color: "#ffffff",
           fontStyle: "bold",
           stroke: "#000000",
@@ -201,8 +212,9 @@ export class UIScene extends Phaser.Scene {
   }
 
   private resizeTimerBg(): void {
-    const w = COIN_PAD_X + this.timerText.width + COIN_PAD_X
-    const h = this.timerText.height + COIN_PAD_Y * 2
+    const s = this.uiScale
+    const w = COIN_PAD_X * 2 * s + this.timerText.width
+    const h = this.timerText.height + COIN_PAD_Y * 2 * s
     this.timerBg.clear()
     this.timerBg.fillStyle(0x000000, 0.55)
     this.timerBg.fillRoundedRect(this.panelX, this.timerBgY, w, h, 14)
@@ -215,18 +227,21 @@ export class UIScene extends Phaser.Scene {
   }
 
   private createShopButton(): void {
+    const s = this.uiScale
+    const w = this.effShopBtnW
+    const h = this.effShopBtnH
     const buttonY =
-      this.timerBgY + this.timerText.height + COIN_PAD_Y * 2 + SHOP_BTN_GAP
+      this.timerBgY + this.timerText.height + COIN_PAD_Y * 2 * s + SHOP_BTN_GAP * s
 
     const bg = this.add.graphics()
     bg.fillStyle(0xf4c542, 1)
-    bg.lineStyle(5, 0xc49b10, 1)
-    bg.fillRoundedRect(0, 0, SHOP_BTN_W, SHOP_BTN_H, 24)
-    bg.strokeRoundedRect(0, 0, SHOP_BTN_W, SHOP_BTN_H, 24)
+    bg.lineStyle(Math.max(1, 5 * s), 0xc49b10, 1)
+    bg.fillRoundedRect(0, 0, w, h, Math.round(24 * s))
+    bg.strokeRoundedRect(0, 0, w, h, Math.round(24 * s))
 
     const label = this.add
-      .text(SHOP_BTN_W / 2, SHOP_BTN_H / 2, "Tienda", {
-        fontSize: "44px",
+      .text(w / 2, h / 2, "Tienda", {
+        fontSize: `${Math.round(44 * s)}px`,
         color: "#1a1a2e",
         fontStyle: "bold",
         stroke: "#fff4bf",
@@ -240,10 +255,10 @@ export class UIScene extends Phaser.Scene {
 
     this.shopButtonHitArea = this.add
       .zone(
-        COIN_BG_X + SHOP_BTN_W / 2,
-        buttonY + SHOP_BTN_H / 2,
-        SHOP_BTN_W,
-        SHOP_BTN_H,
+        COIN_BG_X + w / 2,
+        buttonY + h / 2,
+        w,
+        h,
       )
       .setDepth(101)
       .setInteractive({ useHandCursor: true })
@@ -266,7 +281,7 @@ export class UIScene extends Phaser.Scene {
 
     this.musicBtn = this.add
       .image(x, y1, this.musicEnabled ? "music_on" : "music_off")
-      .setDisplaySize(BTN_H, BTN_H)
+      .setDisplaySize(this.effBtnH, this.effBtnH)
       .setInteractive({ useHandCursor: true })
       .setDepth(100)
 
@@ -278,7 +293,7 @@ export class UIScene extends Phaser.Scene {
 
     this.sfxBtn = this.add
       .image(x, y2, this.sfxEnabled ? "sound_on" : "sound_off")
-      .setDisplaySize(BTN_H, BTN_H)
+      .setDisplaySize(this.effBtnH, this.effBtnH)
       .setInteractive({ useHandCursor: true })
       .setDepth(100)
 
@@ -292,7 +307,7 @@ export class UIScene extends Phaser.Scene {
 
     this.bgArrowBtn = this.add
       .image(x, y3, "bg_arrow")
-      .setDisplaySize(BTN_H, BTN_H)
+      .setDisplaySize(this.effBtnH, this.effBtnH)
       .setInteractive({ useHandCursor: true })
       .setDepth(100)
 
@@ -310,6 +325,7 @@ export class UIScene extends Phaser.Scene {
   }
 
   private updateCoinIcon(count: number): void {
+    const s = this.uiScale
     const key =
       count >= 100000
         ? "bill_pink"
@@ -322,8 +338,8 @@ export class UIScene extends Phaser.Scene {
               : "coin_silver"
     this.coinIcon.setTexture(key)
     const scale = Math.min(
-      (COIN_SLOT_W / this.coinIcon.width) * 1.6,
-      (COIN_SLOT_H / this.coinIcon.height) * 1.6,
+      (COIN_SLOT_W * s / this.coinIcon.width) * 1.6,
+      (COIN_SLOT_H * s / this.coinIcon.height) * 1.6,
     )
     this.coinIcon.setScale(scale)
   }
@@ -382,9 +398,10 @@ export class UIScene extends Phaser.Scene {
   }
 
   private resizeBg(): void {
+    const s = this.uiScale
     const w =
-      COIN_PAD_X + COIN_SLOT_W + COIN_GAP + this.coinCounter.width + COIN_PAD_X
-    const h = this.coinCounter.height + COIN_PAD_Y * 2
+      (COIN_PAD_X + COIN_SLOT_W + COIN_GAP + COIN_PAD_X) * s + this.coinCounter.width
+    const h = this.coinCounter.height + COIN_PAD_Y * 2 * s
     this.coinBg.clear()
     this.coinBg.fillStyle(0x000000, 0.55)
     this.coinBg.fillRoundedRect(this.panelX, this.panelY, w, h, 14)
@@ -461,36 +478,38 @@ export class UIScene extends Phaser.Scene {
     const left = viewport.x
     const right = viewport.right
     const top = viewport.y
+    const s = this.uiScale
 
     this.panelX = left + COIN_BG_X
     this.panelY = top + COIN_BG_Y
-    const textX = this.panelX + COIN_PAD_X + COIN_SLOT_W + COIN_GAP
+    const textX = this.panelX + (COIN_PAD_X + COIN_SLOT_W + COIN_GAP) * s
 
-    this.coinCounter.setPosition(textX, this.panelY + COIN_PAD_Y)
+    this.coinCounter.setPosition(textX, this.panelY + COIN_PAD_Y * s)
     this.coinIcon.setPosition(
-      this.panelX + COIN_PAD_X + COIN_SLOT_W / 2,
-      this.panelY + COIN_PAD_Y + this.coinCounter.height / 2,
+      this.panelX + (COIN_PAD_X + COIN_SLOT_W / 2) * s,
+      this.panelY + COIN_PAD_Y * s + this.coinCounter.height / 2,
     )
 
     this.timerBgY =
-      this.panelY + this.coinCounter.height + COIN_PAD_Y * 2 + TIMER_GAP
+      this.panelY + this.coinCounter.height + COIN_PAD_Y * 2 * s + TIMER_GAP * s
     this.timerText.setPosition(
-      this.panelX + COIN_PAD_X,
-      this.timerBgY + COIN_PAD_Y,
+      this.panelX + COIN_PAD_X * s,
+      this.timerBgY + COIN_PAD_Y * s,
     )
 
     const buttonY =
-      this.timerBgY + this.timerText.height + COIN_PAD_Y * 2 + SHOP_BTN_GAP
+      this.timerBgY + this.timerText.height + COIN_PAD_Y * 2 * s + SHOP_BTN_GAP * s
     this.shopButton.setPosition(this.panelX, buttonY)
     this.shopButtonHitArea.setPosition(
-      this.panelX + SHOP_BTN_W / 2,
-      buttonY + SHOP_BTN_H / 2,
+      this.panelX + this.effShopBtnW / 2,
+      buttonY + this.effShopBtnH / 2,
     )
 
-    const buttonX = right - (MARGIN - 90) - BTN_W / 2
-    const y1 = top + MARGIN + BTN_H / 2
-    const y2 = y1 + BTN_H + 30
-    const y3 = y2 + BTN_H + 30
+    const effBtnW = Math.round(BTN_W * s)
+    const buttonX = right - (MARGIN - 90) - effBtnW / 2
+    const y1 = top + MARGIN + this.effBtnH / 2
+    const y2 = y1 + this.effBtnH + 30 * s
+    const y3 = y2 + this.effBtnH + 30 * s
 
     this.musicBtn.setPosition(buttonX, y1)
     this.sfxBtn.setPosition(buttonX, y2)

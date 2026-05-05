@@ -60,7 +60,7 @@ export function HomeScreen() {
             src="/assets/home/home_image.png"
             alt="Roba al Politico"
             style={{
-              width: "100%",
+              width: "85%",
               maxWidth: "clamp(150px, 40vw, 410px)",
               height: "auto",
               objectFit: "contain",
