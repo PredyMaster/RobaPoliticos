@@ -14,6 +14,7 @@ import { AudioSystem } from "../systems/AudioSystem"
 import { ParticleSystem } from "../systems/ParticleSystem"
 import { EconomySystem } from "../systems/EconomySystem"
 import { HapticsSystem } from "../systems/HapticsSystem"
+import { SpeechBubbleSystem } from "../systems/SpeechBubbleSystem"
 import { getCombatLoadout } from "../data/combatLoadouts"
 import { getBox } from "../data/boxes"
 import { swipeStrength } from "../utils/math"
@@ -70,6 +71,7 @@ export class GameScene extends Phaser.Scene {
   private particles!: ParticleSystem
   private economy!: EconomySystem
   private haptics!: HapticsSystem
+  private speechBubbles!: SpeechBubbleSystem
   private combatLoadout!: CombatLoadout
 
   constructor() {
@@ -170,6 +172,7 @@ export class GameScene extends Phaser.Scene {
       boxId,
     )
     this.haptics = new HapticsSystem(this, vibration)
+    this.speechBubbles = new SpeechBubbleSystem(this)
   }
 
   // ── EventBus bridge ───────────────────────────────────────
@@ -351,5 +354,6 @@ export class GameScene extends Phaser.Scene {
     this.particles?.destroy()
     this.economy?.destroy()
     this.haptics?.destroy()
+    this.speechBubbles?.destroy()
   }
 }

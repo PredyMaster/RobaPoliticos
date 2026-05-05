@@ -20,7 +20,7 @@ const REAL_SPRITES: Record<string, string> = {
   catch_box: "assets/catch_box.png",
   catch_box_basic_box: "assets/catchBoxes/catch_box1.webp",
   catch_box_wide_box: "assets/catchBoxes/catch_box2.webp",
-  catch_box_wheel_box: "assets/catchBoxes/catch_box3.webp",
+  catch_box_stone_box: "assets/catchBoxes/catch_box3.webp",
   catch_box_magnet_box: "assets/catchBoxes/catch_box4.webp",
   catch_box_bonus_box: "assets/catchBoxes/catch_box5.webp",
   catch_box_ultimate_box: "assets/catchBoxes/catch_box6.webp",
@@ -42,6 +42,10 @@ const REAL_SPRITES: Record<string, string> = {
   music_off: "assets/ui/music_off.png",
   sound_on: "assets/ui/sound_on.png",
   sound_off: "assets/ui/sound_off.png",
+  speech_bubble_1: "assets/speechBubbles/speechBubble1.webp",
+  speech_bubble_2: "assets/speechBubbles/speechBubble2.webp",
+  speech_bubble_3: "assets/speechBubbles/speechBubble3.webp",
+  speech_bubble_4: "assets/speechBubbles/speechBubble4.webp",
   ...Object.fromEntries(
     listCombatCursorAssets().map(({ key, path }) => [key, path]),
   ),
@@ -175,7 +179,7 @@ export class PreloadScene extends Phaser.Scene {
         break
       case "catch_box_basic_box":
       case "catch_box_wide_box":
-      case "catch_box_wheel_box":
+      case "catch_box_stone_box":
       case "catch_box_magnet_box":
       case "catch_box_bonus_box":
       case "catch_box_ultimate_box":

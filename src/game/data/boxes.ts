@@ -59,7 +59,7 @@ export const BOXES_MAP = new Map<string, BoxItem>(BOXES.map((b) => [b.id, b]))
 
 const BOX_ALIASES: Record<string, string> = {
   small_box: "basic_box",
-  fast_box: "wheel_box",
+  fast_box: "stone_box",
   golden_box: "bonus_box",
   premium_box: "ultimate_box",
 }
