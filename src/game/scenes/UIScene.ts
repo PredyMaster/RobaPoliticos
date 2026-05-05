@@ -56,6 +56,9 @@ export class UIScene extends Phaser.Scene {
   private sfxBtn!: Phaser.GameObjects.Image
   private bgArrowBtn!: Phaser.GameObjects.Image
 
+  private x2Label: Phaser.GameObjects.Text | null = null
+  private x2Tween: Phaser.Tweens.Tween | null = null
+
   constructor() {
     super({ key: "UIScene", active: false })
   }
@@ -138,6 +141,7 @@ export class UIScene extends Phaser.Scene {
     EventBus.on("RUN_STARTED", this.onRunStarted, this)
     EventBus.on("RUN_PAUSED", this.onRunPaused, this)
     EventBus.on("RUN_RESUMED", this.onRunResumed, this)
+    EventBus.on("BONUS_BOX_CATCH", this.onBonusCatch, this)
 
     const { isPaused } = useGameStore.getState()
     const walletCoins = usePlayerStore.getState().wallet?.currentCoins ?? 0
@@ -386,6 +390,53 @@ export class UIScene extends Phaser.Scene {
     this.coinBg.fillRoundedRect(this.panelX, this.panelY, w, h, 14)
   }
 
+  private onBonusCatch({ x, y }: { x: number; y: number }): void {
+    this.showX2Text(x, y)
+    this.flashCoinCounter()
+  }
+
+  private showX2Text(x: number, y: number): void {
+    if (this.x2Tween) {
+      this.x2Tween.stop()
+      this.x2Tween = null
+    }
+    if (this.x2Label) {
+      this.x2Label.destroy()
+      this.x2Label = null
+    }
+
+    this.x2Label = this.add
+      .text(x, y + 70, "x2", {
+        fontSize: "80px",
+        color: "#00dd44",
+        fontStyle: "bold",
+        stroke: "#000000",
+        strokeThickness: 10,
+      })
+      .setOrigin(0.5)
+      .setDepth(200)
+
+    this.x2Tween = this.tweens.add({
+      targets: this.x2Label,
+      alpha: 0,
+      delay: 500,
+      duration: 50,
+      ease: "Linear",
+      onComplete: () => {
+        this.x2Label?.destroy()
+        this.x2Label = null
+        this.x2Tween = null
+      },
+    })
+  }
+
+  private flashCoinCounter(): void {
+    this.coinCounter.setColor("#00dd44")
+    this.time.delayedCall(300, () => {
+      this.coinCounter.setColor("#ffffff")
+    })
+  }
+
   private onComboUpdated(combo: ComboState): void {
     const milestones = [2, 5, 10, 20, 50]
     if (!milestones.includes(combo.count)) return
@@ -459,5 +510,6 @@ export class UIScene extends Phaser.Scene {
     EventBus.off("RUN_STARTED", this.onRunStarted, this)
     EventBus.off("RUN_PAUSED", this.onRunPaused, this)
     EventBus.off("RUN_RESUMED", this.onRunResumed, this)
+    EventBus.off("BONUS_BOX_CATCH", this.onBonusCatch, this)
   }
 }

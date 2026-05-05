@@ -257,7 +257,7 @@ export const SHOP_BOXES: ShopBoxCatalogItem[] = [
     size: 1.0,
     collider: 0.9,
     speed: 1.0,
-    bonus: 1.5,
+    bonus: 2,
     price: 8000,
     description: "Aquí empieza el dinero serio.",
     unlockLevel: 1,

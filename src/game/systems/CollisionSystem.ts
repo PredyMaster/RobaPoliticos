@@ -3,6 +3,7 @@ import type { Coin } from '../entities/Coin'
 import type { CatchBox } from '../entities/CatchBox'
 import type { ObjectPool } from './ObjectPool'
 import { SCENE_W, SCENE_H } from '../scenes/GameScene'
+import { EventBus } from '../EventBus'
 
 export class CollisionSystem {
   private readonly scene: Phaser.Scene
@@ -57,6 +58,9 @@ export class CollisionSystem {
     this.collected++
     this.pool.release(coin)
     this.scene.events.emit('coin:caught', { x, y, baseValue, coinType: coin.coinState.type })
+    if (this.box.boxId === 'bonus_box') {
+      EventBus.emit('BONUS_BOX_CATCH', { x, y })
+    }
   }
 
   private lose(coin: Coin): void {

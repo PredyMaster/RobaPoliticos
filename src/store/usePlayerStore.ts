@@ -16,7 +16,7 @@ import {
   updateLocalData,
 } from "../services/local/storage"
 
-const extraCoins = 0 //Para testear dinero rapido
+const extraCoins = 5000 //Para testear dinero rapido
 
 type PlayerState = {
   // Jugador local

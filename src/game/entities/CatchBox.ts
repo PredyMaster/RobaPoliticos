@@ -101,6 +101,10 @@ export class CatchBox extends Phaser.GameObjects.Image {
     }
   }
 
+  get boxId(): string {
+    return this.cfg.id
+  }
+
   catchCoin(coin: Coin): number {
     const value = coin.coinState.value * this.cfg.multiplier
     coin.despawn()

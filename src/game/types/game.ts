@@ -171,6 +171,7 @@ export type GameEventMap = {
   CHANGE_BG: undefined
   BG_CHANGED: number
   BOX_SPEED_BOOST: 1 | 2
+  BONUS_BOX_CATCH: { x: number; y: number }
 }
 
 export type GameEventKey = keyof GameEventMap
