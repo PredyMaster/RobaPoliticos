@@ -18,6 +18,7 @@ export class GameOverScene extends Phaser.Scene {
   }
 
   create(data: { coins: number }): void {
+    this.isRestarting = false
     this.coins = data?.coins ?? 0
 
     this.overlay = this.add.graphics().setDepth(200)

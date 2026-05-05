@@ -170,6 +170,7 @@ export type GameEventMap = {
   TOGGLE_SFX: boolean
   CHANGE_BG: undefined
   BG_CHANGED: number
+  BOX_SPEED_BOOST: 1 | 2
 }
 
 export type GameEventKey = keyof GameEventMap

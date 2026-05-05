@@ -12,6 +12,7 @@ export class CatchBox extends Phaser.GameObjects.Image {
   readonly catchArea: Phaser.Geom.Rectangle
 
   private cfg: BoxItem
+  private baseSpeed = 0
   private dir = 1 // +1 = right, -1 = left
   private vx = 0
   private debugGfx?: Phaser.GameObjects.Graphics
@@ -21,6 +22,7 @@ export class CatchBox extends Phaser.GameObjects.Image {
     const y = GROUND_Y - config.height / 2 - 75
     super(scene, x, y, config.visualAsset || "catch_box")
     this.cfg = config
+    this.baseSpeed = config.speed
     scene.add.existing(this)
     this.syncVisualSize()
 
@@ -40,9 +42,14 @@ export class CatchBox extends Phaser.GameObjects.Image {
 
   setConfig(config: BoxItem): void {
     this.cfg = config
+    this.baseSpeed = config.speed
     this.setTexture(config.visualAsset || "catch_box")
     this.syncVisualSize()
     this.syncCatchArea()
+  }
+
+  applySpeedBoost(stage: 1 | 2): void {
+    this.cfg = { ...this.cfg, speed: this.baseSpeed * (1 + stage * 1.0) }
   }
 
   updateMovement(deltaMs: number): void {

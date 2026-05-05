@@ -186,6 +186,11 @@ export class GameScene extends Phaser.Scene {
     EventBus.on("TOGGLE_SFX", this.onToggleSfx, this)
     EventBus.on("CHANGE_BG", this.onChangeBg, this)
     EventBus.on("EQUIPMENT_UPDATED", this.onEquipmentUpdated, this)
+    EventBus.on("BOX_SPEED_BOOST", this.onBoxSpeedBoost, this)
+  }
+
+  private onBoxSpeedBoost(stage: 1 | 2): void {
+    this.box.applySpeedBoost(stage)
   }
 
   private onToggleMusic(enabled: boolean): void {
@@ -344,6 +349,7 @@ export class GameScene extends Phaser.Scene {
     EventBus.off("TOGGLE_SFX", this.onToggleSfx, this)
     EventBus.off("CHANGE_BG", this.onChangeBg, this)
     EventBus.off("EQUIPMENT_UPDATED", this.onEquipmentUpdated, this)
+    EventBus.off("BOX_SPEED_BOOST", this.onBoxSpeedBoost, this)
     this.input.off("pointerdown", this.onPointerDown, this)
 
     this.swipe?.destroy()

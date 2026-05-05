@@ -42,6 +42,8 @@ export class UIScene extends Phaser.Scene {
   private timeRemaining = gameTime
   private timerActive = false
   private runStarted = false
+  private speedBoost1Triggered = false
+  private speedBoost2Triggered = false
   private runCoinsCollected = 0
   private comboBaseY = 300
   private shopButton!: Phaser.GameObjects.Container
@@ -139,11 +141,14 @@ export class UIScene extends Phaser.Scene {
 
     const { isPaused } = useGameStore.getState()
     const walletCoins = usePlayerStore.getState().wallet?.currentCoins ?? 0
-    this.runStarted = true
-    this.timerActive = !isPaused
-    this.onWalletUpdated({ currentCoins: walletCoins })
-    this.setShopButtonEnabled(!isPaused)
-    if (isPaused) this.onRunPaused()
+    if (!isPaused) {
+      EventBus.emit("RUN_STARTED")
+    } else {
+      this.runStarted = true
+      this.timerActive = false
+      this.onWalletUpdated({ currentCoins: walletCoins })
+      this.setShopButtonEnabled(false)
+    }
     this.handleResize()
   }
 
@@ -170,6 +175,15 @@ export class UIScene extends Phaser.Scene {
       this.timerText.setColor("#f4c542")
     } else {
       this.timerText.setColor("#ffffff")
+    }
+
+    if (!this.speedBoost1Triggered && ratio <= 0.67) {
+      this.speedBoost1Triggered = true
+      EventBus.emit("BOX_SPEED_BOOST", 1)
+    }
+    if (!this.speedBoost2Triggered && ratio <= 0.34) {
+      this.speedBoost2Triggered = true
+      EventBus.emit("BOX_SPEED_BOOST", 2)
     }
 
     this.resizeTimerBg()
@@ -318,6 +332,8 @@ export class UIScene extends Phaser.Scene {
     })
     this.timeRemaining = gameTime
     this.timerActive = true
+    this.speedBoost1Triggered = false
+    this.speedBoost2Triggered = false
     this.timerText.setText(this.formatTime(gameTime))
     this.timerText.setColor("#ffffff")
     this.resizeTimerBg()
@@ -355,11 +371,7 @@ export class UIScene extends Phaser.Scene {
     this.runCoinsCollected = totalCoins
   }
 
-  private onWalletUpdated({
-    currentCoins,
-  }: {
-    currentCoins: number
-  }): void {
+  private onWalletUpdated({ currentCoins }: { currentCoins: number }): void {
     this.coinCounter.setText(`${currentCoins}`)
     this.updateCoinIcon(currentCoins)
     this.resizeBg()
