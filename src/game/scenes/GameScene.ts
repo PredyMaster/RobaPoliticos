@@ -16,6 +16,7 @@ import { EconomySystem } from "../systems/EconomySystem"
 import { HapticsSystem } from "../systems/HapticsSystem"
 import { getCombatLoadout } from "../data/combatLoadouts"
 import { getBox } from "../data/boxes"
+import { swipeStrength } from "../utils/math"
 import type { GraphicsQuality } from "../types/game"
 import type { CombatLoadout } from "../types/game"
 
@@ -301,9 +302,10 @@ export class GameScene extends Phaser.Scene {
   private fireWeaponHit(): void {
     const v = this.cursor.lastVelocity
     const speed = Math.sqrt(v.x * v.x + v.y * v.y)
+    const distance = this.cursor.lastMoveDistance
     let dx: number
     let dy: number
-    if (speed > 0.5) {
+    if (speed > 0) {
       dx = v.x / speed
       dy = v.y / speed
     } else {
@@ -312,8 +314,7 @@ export class GameScene extends Phaser.Scene {
       dy = 0.3
     }
 
-    // pointer.velocity ≈ px/frame a 60 fps; un swipe rápido da ~50 px/frame
-    const strength = Math.max(0.2, Math.min(speed / 50, 1.0))
+    const strength = swipeStrength(speed, distance)
     const didHit = true
     const isCritical = Math.random() < this.combatLoadout.criticalChance
 

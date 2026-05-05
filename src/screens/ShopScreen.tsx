@@ -142,7 +142,10 @@ export function ShopView({
   const layout = useShopLayout()
   const [selected, setSelected] = useState<ShopSelection>(() => ({
     category: "weapon",
-    id: normalizeCatalogId("weapon", equipment?.equippedWeaponId ?? DEFAULT_WEAPON_ID),
+    id: normalizeCatalogId(
+      "weapon",
+      equipment?.equippedWeaponId ?? DEFAULT_WEAPON_ID,
+    ),
   }))
   const resolvedSelected = resolveSelectedSelection(
     selected,
@@ -257,7 +260,7 @@ function TopBar({ coins, onBack }: { coins: number; onBack: () => void }) {
         style={{
           display: "flex",
           alignItems: "center",
-          gap: 18,
+          gap: 12,
           padding: "10px 18px",
           borderRadius: 24,
           border: PANEL_BORDER,
@@ -267,7 +270,7 @@ function TopBar({ coins, onBack }: { coins: number; onBack: () => void }) {
             "inset 0 0 0 2px rgba(0,0,0,0.28), 0 14px 40px rgba(0,0,0,0.28)",
         }}
       >
-        <MoneyStackIcon />
+        <WalletCoinIcon coins={coins} />
         <div
           style={{
             minWidth: 0,
@@ -860,12 +863,23 @@ function CoinIcon({ size }: { size: number }) {
   )
 }
 
-function MoneyStackIcon() {
+function WalletCoinIcon({ coins }: { coins: number }) {
+  const src = getWalletCoinIconSrc(coins)
+  const isBill = src.includes("bill_")
+
   return (
-    <div style={{ position: "relative", width: 54, height: 37, flexShrink: 0 }}>
-      <div style={{ ...moneyBillStyle, left: 6, top: 24, rotate: "-16deg" }} />
-      <div style={{ ...moneyBillStyle, left: 28, top: 8, rotate: "10deg" }} />
-    </div>
+    <img
+      src={src}
+      alt=""
+      aria-hidden="true"
+      style={{
+        width: isBill ? 54 : 40,
+        height: isBill ? 37 : 40,
+        objectFit: "contain",
+        flexShrink: 0,
+        filter: "drop-shadow(0 8px 18px rgba(0,0,0,0.25))",
+      }}
+    />
   )
 }
 
@@ -1005,6 +1019,14 @@ function formatCoins(value: number): string {
   return value.toLocaleString("en-US")
 }
 
+function getWalletCoinIconSrc(coins: number): string {
+  if (coins >= 100000) return "/assets/coins/bill_pink.webp"
+  if (coins >= 10000) return "/assets/coins/bill_green.webp"
+  if (coins >= 1000) return "/assets/coins/bill_blue.webp"
+  if (coins >= 100) return "/assets/coins/coin_gold.webp"
+  return "/assets/coins/coin_silver.webp"
+}
+
 function formatPurchaseError(error: string, category: ShopItemType): string {
   if (error === "invalid_item_type" && category === "hand")
     return "Ese item no se puede comprar."
@@ -1099,14 +1121,4 @@ const actionButtonStyle: CSSProperties = {
   gap: 18,
   boxShadow:
     "inset 0 0 0 2px rgba(255,255,255,0.14), 0 18px 36px rgba(0,0,0,0.26)",
-}
-
-const moneyBillStyle: CSSProperties = {
-  position: "absolute",
-  width: 34,
-  height: 20,
-  borderRadius: 2,
-  background: "linear-gradient(180deg, #9cf34b 0%, #56b516 100%)",
-  border: "3px solid #173500",
-  boxShadow: "0 8px 18px rgba(0,0,0,0.25)",
 }

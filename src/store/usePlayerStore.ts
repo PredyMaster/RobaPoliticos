@@ -16,7 +16,7 @@ import {
   updateLocalData,
 } from "../services/local/storage"
 
-const testCoins = 0
+const extraCoins = 0 //Para testear dinero rapido
 
 type PlayerState = {
   // Jugador local
@@ -145,7 +145,7 @@ export const usePlayerStore = create<PlayerState & PlayerActions>(
         ...current,
         wallet: {
           ...current.wallet,
-          currentCoins: current.wallet.currentCoins + amount + testCoins,
+          currentCoins: current.wallet.currentCoins + amount + extraCoins,
           updatedAt,
         },
       }))

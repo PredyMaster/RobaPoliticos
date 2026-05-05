@@ -9,11 +9,13 @@ const ROTATION_LERP = 0.2 // resistencia rotacional por frame (0=rígido, 1=inst
 export class WeaponCursor extends Phaser.GameObjects.Image {
   readonly hitZone: Phaser.Geom.Rectangle
   lastVelocity: { x: number; y: number } = { x: 0, y: 0 }
+  lastMoveDistance = 0
 
   private swinging = false
   private isDesktop: boolean
   private lastTouchX = 0
   private lastTouchY = 0
+  private lastMoveTime = 0
   // Visual-only scale multiplier; hitZone always stays at WEAPON_W×WEAPON_H
   private baseScale: number
   private debugGfx?: Phaser.GameObjects.Graphics
@@ -84,22 +86,27 @@ export class WeaponCursor extends Phaser.GameObjects.Image {
   }
 
   private onMove(pointer: Phaser.Input.Pointer): void {
+    const dx = pointer.x - this.lastTouchX
+    const dy = pointer.y - this.lastTouchY
+    const distance = Math.sqrt(dx * dx + dy * dy)
+    const duration = Math.max(pointer.time - this.lastMoveTime, 1)
+
     this.setPosition(pointer.x, pointer.y)
     this.syncHitZone()
 
     if (this.isDesktop) {
-      this.lastVelocity = { x: pointer.velocity.x, y: pointer.velocity.y }
       this.setVisible(true)
-    } else if (pointer.isDown) {
-      const dx = pointer.x - this.lastTouchX
-      const dy = pointer.y - this.lastTouchY
-      if (dx !== 0 || dy !== 0) {
-        // On Android/Capacitor, pointer.velocity is unreliable; use per-move delta instead
-        this.lastVelocity = { x: dx, y: dy }
-      }
-      this.lastTouchX = pointer.x
-      this.lastTouchY = pointer.y
     }
+
+    if ((this.isDesktop || pointer.isDown) && distance > 0) {
+      // Medimos siempre en px/ms para que desktop y móvil usen la misma escala.
+      this.lastVelocity = { x: dx / duration, y: dy / duration }
+      this.lastMoveDistance = distance
+    }
+
+    this.lastTouchX = pointer.x
+    this.lastTouchY = pointer.y
+    this.lastMoveTime = pointer.time
   }
 
   private onUpdate(): void {
@@ -117,8 +124,10 @@ export class WeaponCursor extends Phaser.GameObjects.Image {
     this.setPosition(pointer.x, pointer.y)
     this.setVisible(true)
     this.lastVelocity = { x: 0, y: 0 }
+    this.lastMoveDistance = 0
     this.lastTouchX = pointer.x
     this.lastTouchY = pointer.y
+    this.lastMoveTime = pointer.time
     this.syncHitZone()
   }
 

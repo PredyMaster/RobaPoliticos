@@ -1,6 +1,6 @@
-import type { CombatLoadout } from '../types/game'
-import { getHand, HANDS } from './hands'
-import { getWeapon, WEAPONS } from './weapons'
+import type { CombatLoadout } from "../types/game"
+import { getHand, HANDS } from "./hands"
+import { getWeapon, WEAPONS } from "./weapons"
 
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value))
@@ -26,7 +26,7 @@ export function getCursorTexturePath(handId: string, weaponId: string): string {
   const handIndex = HAND_INDEX.get(hand.id) ?? 1
   const weaponIndex = WEAPON_INDEX.get(weapon.id) ?? 1
 
-  return `assets/hands_weapons/hand${handIndex}/hand${handIndex}_weapon${weaponIndex}.png`
+  return `assets/hands_weapons/hand${handIndex}/hand${handIndex}_weapon${weaponIndex}.webp`
 }
 
 export function listCombatCursorAssets(): Array<{ key: string; path: string }> {
@@ -64,8 +64,12 @@ export function getCombatLoadout(
     criticalChance: Number(
       clamp(0.06 + dropProgress * 0.1 + attack / 1100, 0.06, 0.22).toFixed(2),
     ),
-    criticalMultiplier: Number((1.35 + dropProgress * 0.35 + attack / 320).toFixed(2)),
-    spread: Number(clamp(0.8 - loot / 160 - dropProgress * 0.16, 0.12, 0.44).toFixed(2)),
+    criticalMultiplier: Number(
+      (1.35 + dropProgress * 0.35 + attack / 320).toFixed(2),
+    ),
+    spread: Number(
+      clamp(0.8 - loot / 160 - dropProgress * 0.16, 0.12, 0.44).toFixed(2),
+    ),
     rarityBonus: Number(
       clamp(0.08 + dropProgress * 0.28 + loot / 320, 0.08, 0.55).toFixed(2),
     ),

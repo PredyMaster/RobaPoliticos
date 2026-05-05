@@ -10,7 +10,7 @@ const HITBOX_W = PLAYER_W * HITBOX_SCALE
 const HITBOX_H = PLAYER_H * HITBOX_SCALE
 
 const SLAP_DURATION_MS = 250
-const HARD_SLAP_THRESHOLD = 0.65
+const HARD_SLAP_THRESHOLD = 0.75
 
 export class PlayerCharacter extends Phaser.GameObjects.Sprite {
   readonly hitZone: Phaser.Geom.Rectangle

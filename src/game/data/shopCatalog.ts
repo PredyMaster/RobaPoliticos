@@ -40,7 +40,7 @@ function shopImageSrc(
   prefix: "weapon" | "hand" | "box",
   index: number,
 ): string {
-  return `/assets/shop/${folder}/${prefix}${index}.png`
+  return `/assets/shop/${folder}/${prefix}${index}.webp`
 }
 
 export const SHOP_WEAPONS: ShopWeaponCatalogItem[] = [
@@ -108,8 +108,8 @@ export const SHOP_WEAPONS: ShopWeaponCatalogItem[] = [
     category: "weapon",
     id: "golden_hammer",
     name: "Martillo dorado",
-    attack: 65,
-    loot: 80,
+    attack: 50,
+    loot: 100,
     price: 12000,
     description: "Para cuando quieres pegar como un millonario.",
     unlockLevel: 1,
