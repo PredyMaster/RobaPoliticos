@@ -52,6 +52,8 @@ const REAL_SPRITES: Record<string, string> = {
   ),
 }
 
+export const BGM_TRACKS = ["bgm_1", "bgm_2", "bgm_3"]
+
 export class PreloadScene extends Phaser.Scene {
   private progressBar!: Phaser.GameObjects.Graphics
   private progressBox!: Phaser.GameObjects.Graphics
@@ -297,10 +299,12 @@ export class PreloadScene extends Phaser.Scene {
       )
     }
 
-    this.load.audio(
-      "bgm",
-      "assets/audio/background%20music/robaPoliticosSong.mp3",
-    )
+    BGM_TRACKS.forEach((key, i) => {
+      this.load.audio(
+        key,
+        `assets/audio/background%20music/robaPoliticosSong${i + 1}.mp3`,
+      )
+    })
   }
 
   create(): void {

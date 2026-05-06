@@ -498,7 +498,7 @@ function ShopTile({
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            gap: 6,
+            gap: 1,
             color: tierStyle.accent,
             fontSize: layout.short ? 14 : 15,
             fontWeight: 900,
@@ -506,8 +506,24 @@ function ShopTile({
             lineHeight: 1,
           }}
         >
-          <CoinIcon size={22} />
-          <span>{formatCoins(item.price)}</span>
+          <span
+            style={{
+              marginLeft: 16,
+            }}
+          >
+            {formatCoins(item.price)}
+          </span>
+          <img
+            src="/assets/coins/coin_gold.webp"
+            alt=""
+            aria-hidden="true"
+            style={{
+              width: 34,
+              height: 34,
+              objectFit: "contain",
+              flexShrink: 0,
+            }}
+          />
         </div>
       </div>
     </button>
@@ -649,8 +665,13 @@ function DetailPanel({
           textShadow: OUTLINE_SHADOW,
         }}
       >
-        <CoinIcon size={22} />
         <span>{formatCoins(item.price)}</span>
+        <img
+          src="/assets/coins/coin_gold.webp"
+          alt=""
+          aria-hidden="true"
+          style={{ width: 22, height: 22, objectFit: "contain", flexShrink: 0 }}
+        />
       </div>
 
       {feedback && (
@@ -834,32 +855,6 @@ function StatRow({ stat }: { stat: DetailStat }) {
         {stat.value}
       </div>
     </div>
-  )
-}
-
-function CoinIcon({ size }: { size: number }) {
-  return (
-    <span
-      aria-hidden="true"
-      style={{
-        width: size,
-        height: size,
-        borderRadius: "50%",
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background: "linear-gradient(180deg, #ffe96c 0%, #ffbf10 100%)",
-        border: "2px solid #8c5200",
-        boxShadow:
-          "inset 0 0 0 2px rgba(255,255,255,0.2), 0 4px 10px rgba(0,0,0,0.26)",
-        color: "#8c5200",
-        fontSize: Math.round(size * 0.62),
-        fontWeight: 900,
-        flexShrink: 0,
-      }}
-    >
-      $
-    </span>
   )
 }
 

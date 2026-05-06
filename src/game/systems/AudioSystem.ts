@@ -1,5 +1,6 @@
 import * as Phaser from "phaser"
 import type { CoinTypeId, ComboState } from "../types/game"
+import { BGM_TRACKS } from "../scenes/PreloadScene"
 
 const RARE_COIN = new Set<CoinTypeId>([
   "coin_gold",
@@ -32,7 +33,8 @@ export class AudioSystem {
     this.musicEnabled = musicEnabled
     this.sfxEnabled = sfxEnabled
 
-    this.bgMusic = this.tryAdd("bgm", { loop: true, volume: 0.4 })
+    const bgmKey = BGM_TRACKS[Math.floor(Math.random() * BGM_TRACKS.length)]
+    this.bgMusic = this.tryAdd(bgmKey, { loop: true, volume: 0.4 })
     this.sfxSlaps = [1, 2, 3, 4].map((i) =>
       this.tryAdd(`sfx_slap_${i}`, { volume: 0.7 }),
     )
