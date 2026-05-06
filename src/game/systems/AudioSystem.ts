@@ -69,6 +69,18 @@ export class AudioSystem {
     }
   }
 
+  switchToRandomTrack(): void {
+    const currentKey = (this.bgMusic as Phaser.Sound.WebAudioSound | Phaser.Sound.HTML5AudioSound | null)?.key
+    const others = BGM_TRACKS.filter((k) => k !== currentKey)
+    const pool = others.length > 0 ? others : BGM_TRACKS
+    const nextKey = pool[Math.floor(Math.random() * pool.length)]
+
+    this.bgMusic?.stop()
+    this.bgMusic?.destroy()
+    this.bgMusic = this.tryAdd(nextKey, { loop: true, volume: 0.4 })
+    this.playMusic()
+  }
+
   stopMusic(): void {
     if (this.bgMusic?.isPlaying) {
       this.bgMusic.stop()

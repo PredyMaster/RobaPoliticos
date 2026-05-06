@@ -46,6 +46,7 @@ const BG_KEYS = [
 export class GameScene extends Phaser.Scene {
   private isRunning = false
   private isPaused = false
+  private currentSpeedBoostStage: 0 | 1 | 2 = 0
 
   // Background
   private bgImage!: Phaser.GameObjects.Image
@@ -190,6 +191,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private onBoxSpeedBoost(stage: 1 | 2): void {
+    this.currentSpeedBoostStage = stage
     this.box.applySpeedBoost(stage)
   }
 
@@ -209,10 +211,12 @@ export class GameScene extends Phaser.Scene {
     }
     this.score.reset()
     this.combo.reset()
+    this.currentSpeedBoostStage = 0
     this.isPaused = false
     this.physics.resume()
     this.isRunning = true
     this.economy.startTracking()
+    this.audio.switchToRandomTrack()
   }
 
   private onRunPaused(): void {
@@ -250,6 +254,9 @@ export class GameScene extends Phaser.Scene {
     this.registry.set("equippedBoxId", boxId)
     this.cursor.setTextureKey(this.combatLoadout.cursorTextureKey)
     this.box.setConfig(getBox(boxId))
+    if (this.currentSpeedBoostStage > 0) {
+      this.box.applySpeedBoost(this.currentSpeedBoostStage as 1 | 2)
+    }
     this.swipe.setLoadout(this.combatLoadout)
     this.spawn.setLoadout(this.combatLoadout)
     this.economy.setEquipment(

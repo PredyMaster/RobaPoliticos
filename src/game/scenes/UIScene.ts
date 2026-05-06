@@ -1,7 +1,9 @@
 import * as Phaser from "phaser"
 import { EventBus } from "../EventBus"
 import type { ComboState } from "../types/game"
+import { SHOP_BOXES, SHOP_HANDS, SHOP_WEAPONS } from "../data/shopCatalog"
 import { useGameStore } from "../../store/useGameStore"
+import { useInventoryStore } from "../../store/useInventoryStore"
 import { usePlayerStore } from "../../store/usePlayerStore"
 
 // UIScene corre en paralelo sobre GameScene.
@@ -24,7 +26,7 @@ const COIN_GAP = 20
 const TIMER_GAP = 15 // separación vertical entre coinBg y timerBg
 const SHOP_BTN_GAP = 22
 const SHOP_BTN_W = 300
-const SHOP_BTN_H = 88
+const SHOP_BTN_H = 110
 
 const gameTime = 300 // 5 minutos en segundos
 
@@ -58,6 +60,11 @@ export class UIScene extends Phaser.Scene {
 
   private x2Label: Phaser.GameObjects.Text | null = null
   private x2Tween: Phaser.Tweens.Tween | null = null
+
+  private arrowUpImage: Phaser.GameObjects.Image | null = null
+  private arrowUpChain: Phaser.Tweens.TweenChain | null = null
+  private arrowUpBaseY = 0
+  private inventoryUnsub: (() => void) | null = null
 
   private uiScale = 1
   private effShopBtnW = SHOP_BTN_W
@@ -111,7 +118,7 @@ export class UIScene extends Phaser.Scene {
 
     this.timerText = this.add
       .text(
-        COIN_BG_X + COIN_PAD_X,
+        COIN_BG_X + this.effShopBtnW / 2,
         this.timerBgY + COIN_PAD_Y,
         this.formatTime(gameTime),
         {
@@ -122,11 +129,12 @@ export class UIScene extends Phaser.Scene {
           strokeThickness: 7,
         },
       )
-      .setOrigin(0, 0)
+      .setOrigin(0.5, 0)
       .setDepth(100)
 
     this.resizeTimerBg()
     this.createShopButton()
+    this.createArrowUp()
 
     // Texto de combo flash (visible brevemente al cambiar nivel)
     this.comboFlash = this.add
@@ -213,7 +221,7 @@ export class UIScene extends Phaser.Scene {
 
   private resizeTimerBg(): void {
     const s = this.uiScale
-    const w = COIN_PAD_X * 2 * s + this.timerText.width
+    const w = this.effShopBtnW
     const h = this.timerText.height + COIN_PAD_Y * 2 * s
     this.timerBg.clear()
     this.timerBg.fillStyle(0x000000, 0.55)
@@ -231,7 +239,10 @@ export class UIScene extends Phaser.Scene {
     const w = this.effShopBtnW
     const h = this.effShopBtnH
     const buttonY =
-      this.timerBgY + this.timerText.height + COIN_PAD_Y * 2 * s + SHOP_BTN_GAP * s
+      this.timerBgY +
+      this.timerText.height +
+      COIN_PAD_Y * 2 * s +
+      SHOP_BTN_GAP * s
 
     const bg = this.add.graphics()
     bg.fillStyle(0xf4c542, 1)
@@ -254,12 +265,7 @@ export class UIScene extends Phaser.Scene {
       .setDepth(100)
 
     this.shopButtonHitArea = this.add
-      .zone(
-        COIN_BG_X + w / 2,
-        buttonY + h / 2,
-        w,
-        h,
-      )
+      .zone(COIN_BG_X + w / 2, buttonY + h / 2, w, h)
       .setDepth(101)
       .setInteractive({ useHandCursor: true })
 
@@ -271,6 +277,91 @@ export class UIScene extends Phaser.Scene {
       useGameStore.getState().openShop()
       EventBus.emit("OPEN_SHOP")
     })
+  }
+
+  private createArrowUp(): void {
+    const s = this.uiScale
+    const arrowSize = Math.round(120 * s)
+    const arrowX = this.panelX + this.effShopBtnW / 2
+    const arrowY = this.computeArrowBaseY()
+    this.arrowUpBaseY = arrowY
+
+    this.arrowUpImage = this.add
+      .image(arrowX, arrowY, "arrow_up")
+      .setDisplaySize(arrowSize, arrowSize)
+      .setDepth(101)
+      .setVisible(false)
+
+    this.inventoryUnsub = useInventoryStore.subscribe(() => {
+      this.updateArrowVisibility()
+    })
+
+    this.updateArrowVisibility()
+  }
+
+  private computeArrowBaseY(): number {
+    const s = this.uiScale
+    const buttonY =
+      this.timerBgY +
+      this.timerText.height +
+      COIN_PAD_Y * 2 * s +
+      SHOP_BTN_GAP * s
+    return buttonY + this.effShopBtnH + Math.round(45 * s)
+  }
+
+  private canAffordAnyUnownedItem(): boolean {
+    const { items } = useInventoryStore.getState()
+    const coins = usePlayerStore.getState().wallet?.currentCoins ?? 0
+    const ownedSet = new Set(items.map((i) => `${i.itemType}:${i.itemId}`))
+    const allItems = [...SHOP_WEAPONS, ...SHOP_HANDS, ...SHOP_BOXES]
+    return allItems.some(
+      (item) =>
+        item.price > 0 &&
+        !ownedSet.has(`${item.category}:${item.id}`) &&
+        coins >= item.price,
+    )
+  }
+
+  private updateArrowVisibility(): void {
+    if (!this.arrowUpImage) return
+    const show = this.canAffordAnyUnownedItem()
+    if (show && !this.arrowUpImage.visible) {
+      this.arrowUpImage.setVisible(true)
+      this.startArrowBounce()
+    } else if (!show && this.arrowUpImage.visible) {
+      this.arrowUpImage.setVisible(false)
+      this.stopArrowBounce()
+    }
+  }
+
+  private startArrowBounce(): void {
+    this.stopArrowBounce()
+    if (!this.arrowUpImage) return
+    const s = this.uiScale
+    const base = this.arrowUpBaseY
+    this.arrowUpImage.setY(base)
+    this.arrowUpChain = this.tweens.chain({
+      targets: this.arrowUpImage,
+      tweens: [
+        { y: base, duration: 1520 },
+        {
+          y: base - Math.round(6 * s) - 10,
+          duration: 200,
+          ease: "Sine.easeOut",
+        },
+        { y: base, duration: 210, ease: "Sine.easeIn" },
+        { y: base - Math.round(2 * s), duration: 100, ease: "Sine.easeOut" },
+        { y: base, duration: 420, ease: "Sine.easeIn" },
+      ],
+      loop: -1,
+    })
+  }
+
+  private stopArrowBounce(): void {
+    if (this.arrowUpChain) {
+      this.arrowUpChain.stop()
+      this.arrowUpChain = null
+    }
   }
 
   private createAudioButtons(): void {
@@ -338,8 +429,8 @@ export class UIScene extends Phaser.Scene {
               : "coin_silver"
     this.coinIcon.setTexture(key)
     const scale = Math.min(
-      (COIN_SLOT_W * s / this.coinIcon.width) * 1.6,
-      (COIN_SLOT_H * s / this.coinIcon.height) * 1.6,
+      ((COIN_SLOT_W * s) / this.coinIcon.width) * 1.2,
+      ((COIN_SLOT_H * s) / this.coinIcon.height) * 1.2,
     )
     this.coinIcon.setScale(scale)
   }
@@ -395,12 +486,14 @@ export class UIScene extends Phaser.Scene {
     this.coinCounter.setText(`${currentCoins}`)
     this.updateCoinIcon(currentCoins)
     this.resizeBg()
+    this.updateArrowVisibility()
   }
 
   private resizeBg(): void {
     const s = this.uiScale
     const w =
-      (COIN_PAD_X + COIN_SLOT_W + COIN_GAP + COIN_PAD_X) * s + this.coinCounter.width
+      (COIN_PAD_X + COIN_SLOT_W + COIN_GAP + COIN_PAD_X) * s +
+      this.coinCounter.width
     const h = this.coinCounter.height + COIN_PAD_Y * 2 * s
     this.coinBg.clear()
     this.coinBg.fillStyle(0x000000, 0.55)
@@ -493,17 +586,28 @@ export class UIScene extends Phaser.Scene {
     this.timerBgY =
       this.panelY + this.coinCounter.height + COIN_PAD_Y * 2 * s + TIMER_GAP * s
     this.timerText.setPosition(
-      this.panelX + COIN_PAD_X * s,
+      this.panelX + this.effShopBtnW / 2,
       this.timerBgY + COIN_PAD_Y * s,
     )
 
     const buttonY =
-      this.timerBgY + this.timerText.height + COIN_PAD_Y * 2 * s + SHOP_BTN_GAP * s
+      this.timerBgY +
+      this.timerText.height +
+      COIN_PAD_Y * 2 * s +
+      SHOP_BTN_GAP * s
     this.shopButton.setPosition(this.panelX, buttonY)
     this.shopButtonHitArea.setPosition(
       this.panelX + this.effShopBtnW / 2,
       buttonY + this.effShopBtnH / 2,
     )
+
+    if (this.arrowUpImage) {
+      const newBase = this.computeArrowBaseY()
+      this.arrowUpBaseY = newBase
+      this.arrowUpImage.setX(this.panelX + this.effShopBtnW / 2)
+      this.arrowUpImage.setY(newBase)
+      if (this.arrowUpImage.visible) this.startArrowBounce()
+    }
 
     const effBtnW = Math.round(BTN_W * s)
     const buttonX = right - (MARGIN - 90) - effBtnW / 2
@@ -522,6 +626,11 @@ export class UIScene extends Phaser.Scene {
   }
 
   shutdown(): void {
+    this.stopArrowBounce()
+    if (this.inventoryUnsub) {
+      this.inventoryUnsub()
+      this.inventoryUnsub = null
+    }
     this.scale.off(Phaser.Scale.Events.RESIZE, this.handleResize, this)
     EventBus.off("COMBO_UPDATED", this.onComboUpdated, this)
     EventBus.off("RUN_SCORE_UPDATED", this.onScoreUpdated, this)

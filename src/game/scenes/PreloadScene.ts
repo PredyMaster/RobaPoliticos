@@ -43,6 +43,7 @@ const REAL_SPRITES: Record<string, string> = {
   music_off: "assets/ui/music_off.png",
   sound_on: "assets/ui/sound_on.png",
   sound_off: "assets/ui/sound_off.png",
+  arrow_up: "assets/ui/arrow_up.webp",
   speech_bubble_1: "assets/speechBubbles/speechBubble1.webp",
   speech_bubble_2: "assets/speechBubbles/speechBubble2.webp",
   speech_bubble_3: "assets/speechBubbles/speechBubble3.webp",

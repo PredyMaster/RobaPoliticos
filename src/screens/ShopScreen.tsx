@@ -132,6 +132,20 @@ const SECTION_STYLES: Record<
   },
 }
 
+function AlertBounceStyle() {
+  return (
+    <style>{`
+      @keyframes alertBounce {
+        0%, 72%, 100% { transform: translateY(0); }
+        78% { transform: translateY(-7px); }
+        84% { transform: translateY(0); }
+        88% { transform: translateY(-3px); }
+        92%, 100% { transform: translateY(0); }
+      }
+    `}</style>
+  )
+}
+
 export function ShopView({
   embedded = false,
   onBack,
@@ -158,85 +172,88 @@ export function ShopView({
   const handleBack = onBack ?? (() => navigate("/home"))
 
   return (
-    <div
-      style={{
-        minHeight: "100dvh",
-        width: embedded ? "100vw" : undefined,
-        height: embedded ? "100dvh" : undefined,
-        display: "flex",
-        flexDirection: "column",
-        overflow: layout.compact ? "auto" : "hidden",
-        color: "#fff",
-        paddingTop: "15px",
-        background:
-          "radial-gradient(circle at top, rgba(27, 92, 162, 0.3), transparent 36%), linear-gradient(180deg, #061724 0%, #04121d 100%)",
-        fontFamily: `${SHOP_FONT}, ${FONT}`,
-      }}
-    >
+    <>
+      <AlertBounceStyle />
       <div
         style={{
-          flex: 1,
-          minHeight: 0,
-          overflowY: layout.compact ? "auto" : "hidden",
-          padding: layout.compact ? 12 : layout.short ? 12 : 16,
+          minHeight: "100dvh",
+          width: embedded ? "100vw" : undefined,
+          height: embedded ? "100dvh" : undefined,
+          display: "flex",
+          flexDirection: "column",
+          overflow: layout.compact ? "auto" : "hidden",
+          color: "#fff",
+          paddingTop: "15px",
+          background:
+            "radial-gradient(circle at top, rgba(27, 92, 162, 0.3), transparent 36%), linear-gradient(180deg, #061724 0%, #04121d 100%)",
+          fontFamily: `${SHOP_FONT}, ${FONT}`,
         }}
       >
-        <TopBar coins={wallet?.currentCoins ?? 0} onBack={handleBack} />
-
         <div
           style={{
-            display: "grid",
-            gridTemplateColumns: layout.compact
-              ? "1fr"
-              : "minmax(0, 1fr) 430px",
-            gap: layout.compact ? 14 : 16,
-            alignItems: "start",
-            minWidth: 0,
-            height: layout.compact ? "auto" : "calc(100dvh - 148px)",
+            flex: 1,
+            minHeight: 0,
+            overflowY: layout.compact ? "auto" : "hidden",
+            padding: layout.compact ? 12 : layout.short ? 12 : 16,
           }}
         >
+          <TopBar coins={wallet?.currentCoins ?? 0} onBack={handleBack} />
+
           <div
             style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: layout.short ? 10 : 12,
+              display: "grid",
+              gridTemplateColumns: layout.compact
+                ? "1fr"
+                : "minmax(0, 1fr) 430px",
+              gap: layout.compact ? 14 : 16,
+              alignItems: "start",
               minWidth: 0,
-              minHeight: 0,
-              justifyContent: "space-between",
+              height: layout.compact ? "auto" : "calc(100dvh - 148px)",
             }}
           >
-            <CategorySection
-              category="weapon"
-              items={SHOP_WEAPONS}
-              selected={resolvedSelected}
-              onSelect={setSelected}
-              layout={layout}
-            />
-            <CategorySection
-              category="hand"
-              items={SHOP_HANDS}
-              selected={resolvedSelected}
-              onSelect={setSelected}
-              layout={layout}
-            />
-            <CategorySection
-              category="box"
-              items={SHOP_BOXES}
-              selected={resolvedSelected}
-              onSelect={setSelected}
-              layout={layout}
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: layout.short ? 10 : 12,
+                minWidth: 0,
+                minHeight: 0,
+                justifyContent: "space-between",
+              }}
+            >
+              <CategorySection
+                category="weapon"
+                items={SHOP_WEAPONS}
+                selected={resolvedSelected}
+                onSelect={setSelected}
+                layout={layout}
+              />
+              <CategorySection
+                category="hand"
+                items={SHOP_HANDS}
+                selected={resolvedSelected}
+                onSelect={setSelected}
+                layout={layout}
+              />
+              <CategorySection
+                category="box"
+                items={SHOP_BOXES}
+                selected={resolvedSelected}
+                onSelect={setSelected}
+                layout={layout}
+              />
+            </div>
+
+            <DetailPanel
+              key={`${selectedItem.category}:${selectedItem.id}`}
+              item={selectedItem}
+              compact={layout.compact}
+              short={layout.short}
             />
           </div>
-
-          <DetailPanel
-            key={`${selectedItem.category}:${selectedItem.id}`}
-            item={selectedItem}
-            compact={layout.compact}
-            short={layout.short}
-          />
         </div>
       </div>
-    </div>
+    </>
   )
 }
 
@@ -381,14 +398,7 @@ function ShopTile({
   const coins = usePlayerStore((s) => s.wallet?.currentCoins ?? 0)
   const purchase = useInventoryStore((s) => s.purchase)
   const equip = useInventoryStore((s) => s.equip)
-  const statusLabel =
-    status === "equipped"
-      ? "EQUIPADO"
-      : status === "owned"
-        ? "TUYO"
-        : status === "locked"
-          ? "BLOQ."
-          : null
+  const isAffordable = status === "available" && coins >= item.price
 
   async function handleDoubleClick() {
     onSelect()
@@ -428,29 +438,56 @@ function ShopTile({
         cursor: busy ? "progress" : "pointer",
       }}
     >
-      {statusLabel && (
+      {(status === "equipped" ||
+        status === "owned" ||
+        status === "locked" ||
+        isAffordable) && (
         <div
           style={{
             position: "absolute",
-            top: 8,
-            right: 8,
+            bottom: 56,
+            right: 16,
             zIndex: 2,
-            padding: "5px 8px",
-            borderRadius: 999,
-            background:
-              status === "equipped"
-                ? "rgba(128, 255, 118, 0.92)"
-                : status === "owned"
-                  ? "rgba(91, 184, 255, 0.9)"
-                  : "rgba(33, 39, 51, 0.94)",
-            color: status === "locked" ? "#cad2dc" : "#0b1520",
-            fontSize: 10,
-            fontWeight: 900,
-            letterSpacing: "0.03em",
-            boxShadow: "0 8px 12px rgba(0,0,0,0.22)",
           }}
         >
-          {statusLabel}
+          {status === "locked" ? (
+            <div
+              style={{
+                padding: "5px 8px",
+                borderRadius: 999,
+                background: "rgba(33, 39, 51, 0.94)",
+                color: "#cad2dc",
+                fontSize: 10,
+                fontWeight: 900,
+                letterSpacing: "0.03em",
+                boxShadow: "0 8px 12px rgba(0,0,0,0.22)",
+              }}
+            >
+              BLOQ.
+            </div>
+          ) : (
+            <img
+              src={
+                status === "equipped"
+                  ? "/assets/ui/equipped.webp"
+                  : status === "owned"
+                    ? "/assets/ui/purchased.webp"
+                    : "/assets/ui/alert.webp"
+              }
+              alt=""
+              aria-hidden="true"
+              style={{
+                width: 25,
+                height: 25,
+                objectFit: "contain",
+                display: "block",
+                filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.5))",
+                animation: isAffordable
+                  ? "alertBounce 3.5s ease-in-out infinite"
+                  : "none",
+              }}
+            />
+          )}
         </div>
       )}
 
